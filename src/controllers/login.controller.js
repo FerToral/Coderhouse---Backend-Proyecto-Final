@@ -36,9 +36,12 @@ class LoginController {
           { _id: req.session.user._id },
           { last_connection: new Date() },
         );
-      req.session.destroy((err) =>
-        err ? next(err) : res.clearCookie("connect.sid").redirect("/login"),
-      );
+      const sessionId = req.session.id;
+      req.session.destroy((err) => {
+        if (err) return next(err);
+        req.app.locals.chatIO?.in(sessionId).disconnectSockets(true);
+        return res.clearCookie("connect.sid").redirect("/login");
+      });
     } catch (err) {
       next(err);
     }

@@ -71,6 +71,10 @@ test("sesiones: registro crea carrito y no expone hash de contraseña", async ()
   assert.equal(current.body.payload.email, "student@example.test");
   assert.equal("password" in current.body.payload, false);
   assert.ok(await CartsModel.findById(a.cart));
+  await a.agent
+    .get("/products")
+    .expect(200)
+    .expect(/Hola, Estudiante/);
 });
 test("sesiones: login correcto tras logout y contraseña incorrecta rechazada", async () => {
   const a = await account();

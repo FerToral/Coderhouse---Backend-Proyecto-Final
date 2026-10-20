@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import swaggerJSDoc from "swagger-jsdoc";
 import swaggerUiExpress from "swagger-ui-express";
+import { apiDocumentation } from "./docs/openapi.js";
 import { initializePassport } from "./config/passport.config.js";
 import env from "./config/config.js";
 import { addLogger } from "./utils/logger.js";
@@ -121,12 +122,10 @@ export function createApp({
   app.set("view engine", "handlebars");
   app.use(express.static(path.join(root, "public")));
   const specs = swaggerJSDoc({
-    definition: {
-      openapi: "3.0.1",
-      info: { title: "Ecommerce · Backend", version: "1.0.0" },
-    },
-    apis: [path.join(root, "docs/**/*.yaml")],
+    definition: apiDocumentation,
+    apis: [],
   });
+  app.get("/apidocs.json", (req, res) => res.json(specs));
   app.use("/apidocs", swaggerUiExpress.serve, swaggerUiExpress.setup(specs));
   app.use("/api/sessions", sessionsApiRouter);
   app.use("/api/products", productsApiRouter);
@@ -155,12 +154,10 @@ export function createApp({
     req.logger?.error(
       "Request failed: " + req.method + " " + req.path + " (" + status + ")",
     );
-    res
-      .status(status)
-      .json({
-        status: "error",
-        msg: status >= 500 ? "Internal server error" : err.message,
-      });
+    res.status(status).json({
+      status: "error",
+      msg: status >= 500 ? "Internal server error" : err.message,
+    });
   });
   return app;
 }

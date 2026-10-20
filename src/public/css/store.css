@@ -1,4 +1,38 @@
 @charset "UTF-8";
+.chat-page {
+  max-width: 760px;
+  margin: 48px auto;
+  padding: 0 24px;
+}
+.chat-messages {
+  list-style: none;
+  padding: 0;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+.chat-messages li {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.chat-messages p {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+}
+.chat-compose {
+  display: grid;
+  gap: 10px;
+  margin: 24px 0;
+}
+.chat-compose textarea {
+  width: 100%;
+  padding: 12px;
+  font: inherit;
+  resize: vertical;
+}
+.chat-compose button {
+  justify-self: start;
+}
 :root {
   --ink: #172d33;
   --muted: #56686a;

@@ -1,5 +1,11 @@
 # API y políticas
 
+Contrato interactivo actual en /apidocs y JSON en /apidocs.json. Cubre
+productos, carritos y current, con cookie de sesión, cuerpos reales y
+respuesta de compra parcial. Los YAML anteriores permanecen como fuentes
+históricas, pero no se cargan en el contrato activo: incluían rutas que
+no corresponden a la API actual.
+
 Todas las mutaciones de carrito requieren sesión de cliente y propiedad del carrito. La sesión contiene sólo identidad mínima y el rol/carrito se actualizan desde Mongo en cada petición autenticada.
 
 | Ruta                                 | Acceso y operación                                                                                  |
@@ -50,3 +56,21 @@ Errores: 400 datos inválidos/carrito vacío, 401 falta de sesión, 403 acceso a
 Se comprueban con un transporte simulado en las pruebas. Una baja por inactividad no elimina una cuenta si falla su correo; una conexión producida durante el envío cancela el borrado. El envío externo y el borrado no son una transacción distribuida: para producción convendría un outbox/cola con reintentos y auditoría. No se añade infraestructura de ese tamaño a este ejercicio académico.
 
 Las cargas fallidas pueden dejar un archivo huérfano si falla Mongo después de escribirlo; no se expone públicamente, pero falta una política de limpieza. No iniciar tareas automáticas que borren datos reales para probar la consigna.
+
+## Conversación
+
+Vista /chats/chat para usuarios user/premium. El autor proviene de la
+cuenta autenticada, nunca del formulario. Evento msg_front_to_back:
+objeto con message de 1–1000 caracteres y confirmación {ok,error}.
+all_msgs devuelve hasta cien mensajes ordenados cronológicamente.
+Los clientes comparten este historial; la vista advierte que no deben
+enviar datos privados. Se muestran mediante textContent, sin interpretar HTML.
+
+La sesión se recarga al entrar, enviar y entregar mensajes. Logout desconecta
+los sockets de esa sesión; una cuenta eliminada o convertida a admin deja
+de enviar/recibir. Mismo origen también para WebSocket y límite de cinco
+mensajes cada diez segundos por conexión. Es un límite académico básico,
+no protección distribuida contra abuso.
+
+Referencia técnica:
+[sesiones de Express con Socket.IO](https://socket.io/how-to/use-with-express-session).

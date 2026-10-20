@@ -5,7 +5,7 @@ Aplicación de comercio electrónico construida progresivamente durante la cursa
 ## Fuentes de la consigna
 
 - [Manual de desafíos I](https://docs.google.com/presentation/d/18m-LE4PYwPNjcwV6dkU6aZEo7K6PPTrmtN-zYzdL8CU/edit): productos, archivos, Express, primera entrega, vistas/sockets y segunda entrega.
-- [Manual II](https://docs.google.com/presentation/d/1i7eWntVScSiTCONf23o3N6ZFYldpEbbf04o3mAskT-s/edit): tercera preentrega y evolución de arquitectura. Existe copia PPT local; reconciliación detallada pendiente.
+- [Manual II](https://docs.google.com/presentation/d/1i7eWntVScSiTCONf23o3N6ZFYldpEbbf04o3mAskT-s/edit): login, Passport, capas y tercera preentrega; contrastado con las 25 diapositivas de la copia local.
 - [Manual III](https://docs.google.com/presentation/d/11btvu6TMnBHCw8UVk7aoNeeR1bjhO-WX6Q4iCr37imk/edit): errores, logger, roles, recuperación, documentación, pruebas y cierre.
 - [Rúbrica del proyecto final](https://drive.google.com/file/d/1fj0ukMVLnCwk2_RNvsNqIWiy37gA62Yx/view): ejecución, políticas de sesión, compra y capas. Es una plantilla sin evaluación personal; su puntuación vacía no es una nota de Fernando.
 - [Instrumentos de evaluación](https://drive.google.com/drive/folders/1NA8-ToFid3QPub9lyLVPKB7nPDnSxhHU): listas de las tres preentregas.
@@ -15,7 +15,7 @@ Se enlaza material docente; no se incorpora una copia pública sin autorización
 
 ## Recorrido y verificación
 
-“Pendiente” significa no certificado en esta revisión, no ausencia comprobada del código. La batería actual suma 51 pruebas unitarias, Mongo y HTTP. No equivale a aprobación docente ni despliegue validado.
+“Pendiente” significa no certificado en esta revisión, no ausencia comprobada del código. La batería actual suma 65 pruebas unitarias, Mongo, HTTP y WebSocket. No equivale a aprobación docente ni despliegue validado.
 
 | Bloque                          | Consigna y referencia                                                                                           | Estado y comprobación necesaria                                                                                                                       |
 | ------------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -44,7 +44,27 @@ Se enlaza material docente; no se incorpora una copia pública sin autorización
 
 La pasarela de pago no se evalúa en el final según el manual III y la clase 24/45. No se añade React, Nest ni un proveedor de pagos como supuesto requisito. Las vistas administrativas de usuarios sí figuran en la consigna; el editor visual de productos no es obligatorio. Las prácticas complementarias se registran como tales, aunque algunas políticas premium también aparecen en la rúbrica final.
 
-Hay una diferencia a reconciliar entre el patrón Repository del material general y las anotaciones de la comisión sobre acceso servicio–DAO y Factory. No se reestructura todo el proyecto para satisfacer una interpretación no confirmada.
+El manual II, diapositiva 20, presenta Factory como opcional y solicita
+Repository. La comisión contiene anotaciones diferentes sobre servicio–DAO.
+La implementación mantiene sus servicios y DAO; no se declara certificada
+una capa Repository adicional ni se reestructura por la sola aparición
+del patrón en el manual general.
+
+### Contraste del manual II
+
+| Diapositivas | Requisito                                     | Comprobación                                                                                                                   |
+| ------------ | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 7            | Login, bienvenida y roles                     | Login redirige a productos; vista muestra identidad. Admin se configura fuera del código, no con contraseña incrustada         |
+| 10           | bcrypt y Passport local/GitHub                | Registro/login local probados; GitHub requiere nuevas claves y verificación externa                                            |
+| 13–14        | Usuario, carrito y current, sesión o JWT      | Sesiones elegidas; DTO mínimo y carrito probados. No se exige implementar simultáneamente JWT                                  |
+| 17           | Routing, controladores, DAO, vistas y entorno | Capas existentes; variables documentadas en ejemplo sin secretos. La petición histórica de adjuntar .env no implica publicarlo |
+| 20           | Factory opcional y Repository                 | Diferencia documental anterior registrada, sin fingir patrón adicional validado                                                |
+| 21–22        | Ticket, permisos y compra parcial             | Compra, rollback/concurrencia y propiedad probados; premium se incorpora por la etapa posterior                                |
+| 21           | Chat para clientes, no admin                  | Handshake y cada envío/receptor recargan sesión/rol; logout corta sockets, sin mutaciones de productos por este canal          |
+
+El chat muestra texto, nunca HTML aportado por usuarios; son mejoras de
+seguridad de mantenimiento. Se ensayaron diez casos WebSocket reales y
+dos unitarios. No se afirma una auditoría de seguridad exhaustiva.
 
 La corrección nueva redondea el total del ticket a dos decimales y rechaza importes no finitos/cantidades no enteras. Es una decisión de mantenimiento, no una cita de la consigna.
 
@@ -56,4 +76,10 @@ npm run test:unit
 
 Las pruebas ejecutan el servicio y el middleware reales con dependencias simuladas, sin Mongo, correo, Twilio ni claves. El arranque actual no usa secretos literales ni el .env histórico. Las credenciales previas siguen en Git y necesitan revisión/revocación por su titular; no se verificó si siguen activas. Las pruebas Mongo/HTTP crean su propia base efímera y correo simulado.
 
-Para cerrar la cursada faltan reconciliar íntegramente el manual II y las actividades históricas, el módulo de chat/sockets, Swagger, ejecución con SMTP/OAuth reales y despliegue HTTPS con secretos nuevos. Las pruebas de compra y administración no acreditan por sí solas todo el curso.
+Para cerrar la cursada faltan las actividades históricas, la diferencia
+Repository de la comisión, servicios SMTP/OAuth reales y despliegue HTTPS
+con secretos nuevos. Swagger activo cubre productos, carritos y current;
+las otras rutas tienen descripción en API.md, no se presentan todas
+como contratos OpenAPI certificados. La antigua vista de altas/bajas
+por sockets permanece como antecedente, sin reactivar escrituras que
+eludan permisos. Estas pruebas no acreditan por sí solas todo el curso.

@@ -16,7 +16,7 @@ try {
   });
   const app = createApp({ sessionStore: store });
   const server = createServer(app);
-  connectSocket(server, app.locals.sessionMiddleware);
+  app.locals.chatIO = connectSocket(server, app.locals.sessionMiddleware);
   server.listen(env.port, "127.0.0.1", () =>
     logger.info("Ecommerce disponible en http://localhost:" + env.port),
   );

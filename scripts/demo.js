@@ -5,6 +5,7 @@ const { createServer } = await import("node:http");
 const { startTestDatabase } = await import("../test/helpers/mongo.js");
 const { ProductsModel } = await import("../src/dao/models/products.model.js");
 const { createApp } = await import("../src/app.js");
+const { connectSocket } = await import("../src/utils/connect-socket.js");
 const stop = await startTestDatabase();
 await ProductsModel.create([
   {
@@ -49,14 +50,15 @@ await ProductsModel.create([
     status: true,
   },
 ]);
-const server = createServer(
-  createApp({ sessionSecret: randomBytes(32).toString("hex") }),
-);
+const app = createApp({ sessionSecret: randomBytes(32).toString("hex") });
+const server = createServer(app);
+const chatIO = connectSocket(server, app.locals.sessionMiddleware);
+app.locals.chatIO = chatIO;
 server.listen(8767, "127.0.0.1", () =>
   console.log("Demo local efímera: http://127.0.0.1:8767/products"),
 );
 const shutdown = () =>
-  server.close(async () => {
+  chatIO.close(async () => {
     await stop();
     process.exit(0);
   });

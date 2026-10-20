@@ -12,6 +12,7 @@
         >code</span><small>objetos cotidianos</small></a>
       <nav aria-label="Principal"><a href="/products">Catálogo</a>
         {{#if sessionUser}}
+          {{#unless isAdmin}}<a href="/chats/chat">Conversación</a>{{/unless}}
           {{#if isAdmin}}<a href="/users">Usuarios</a>{{/if}}
           {{#if sessionUser.cart}}<a href="/carts/{{sessionUser.cart}}">Mi
               carrito</a>{{/if}}

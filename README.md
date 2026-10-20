@@ -47,7 +47,11 @@ npm audit
 - `test/integration`: transacciones Mongo, concurrencia, API HTTP, sesiones, permisos, documentos y recuperación. Crean bases temporales propias y nunca leen `MONGO_URL`; el correo se sustituye por un buzón en memoria.
 - `test/*.test.js`: prácticas históricas conservadas; no se incluyen automáticamente en la batería vigente. El test de usuario ya no abre una base externa ni elimina colecciones al importar.
 
-La batería actual suma **51 pruebas**. En esta revisión se comprobó además el flujo real de navegador: registro → catálogo → cantidad → compra → recibo, con vista estrecha y escritorio. Las pruebas no equivalen a aprobación docente ni garantizan la seguridad de un despliegue externo.
+La batería actual suma **65 pruebas**, con compra/cuentas por HTTP/Mongo,
+chat WebSocket y documentación OpenAPI. Se comprobó además el flujo real de
+navegador: registro → catálogo → cantidad → compra → recibo, con vista
+estrecha y escritorio. Las pruebas no equivalen a aprobación docente ni
+garantizan la seguridad de un despliegue externo.
 
 ## Estructura
 
@@ -66,7 +70,10 @@ scripts/        demo efímera
 docs/           consigna, contratos y alcance
 ```
 
-La documentación Swagger se consulta en `/apidocs`. Sus esquemas históricos aún necesitan reconciliarse completamente con las rutas actuales; los contratos activos y límites están en [la guía de API](docs/API.md).
+Swagger en `/apidocs` y JSON en `/apidocs.json` documentan productos,
+carritos y sesión actual: cookie real, permisos, cantidades y compra
+parcial. Los YAML antiguos se conservan, pero no se sirven como contratos
+actuales. Las otras rutas y límites están en [la guía de API](docs/API.md).
 
 ## Seguridad y límites
 
@@ -74,7 +81,11 @@ Los archivos de entorno y logs no se versionan en la revisión actual. **El hist
 
 Los documentos se guardan fuera de los recursos públicos, con nombres aleatorios, límites de tamaño y descarga autenticada. Nunca subir documentos personales reales a una demo pública. El correo real, OAuth, HTTPS/proxy y despliegue externo no fueron ejercitados: se probaron localmente con sustitutos.
 
-Las actividades anteriores permanecen en el repositorio como contexto; la interfaz activa es el catálogo HTTP. Las escrituras de productos/carrito por sockets sin autorización fueron retiradas. El módulo histórico de chat todavía requiere una revisión específica antes de presentarse como funcionalidad completa.
+Las actividades anteriores permanecen como contexto; la interfaz activa es
+el catálogo HTTP. Las escrituras de productos/carrito por sockets sin
+autorización fueron retiradas. La conversación de clientes usa sesión,
+autor asignado en servidor, texto seguro, historial acotado y confirmación
+de envío. Logout corta la conexión; roles y cuentas se revalidan.
 
 ## Autoría y material del curso
 

@@ -1,30 +1,28 @@
-
-
-
-<div class="container container-msgs d-flex flex-column">
-  <div class="row welcome-title">
-    <div class="col">
-      <h2 class="m-4">Bienvenid@ <span id="span-email"></span></h2>
-    </div>
-  </div>
-  <div class="row flex-fill h-100">
-    <div class="col-4 component-group-chats">
-      <ul class="list-group ">
-        <li class="list-group-item">Grupo Backend-Coders</li>
-        <li class="list-group-item">Grupo de Chats 2</li>
-        <li class="list-group-item">Grupo de Chats 3</li>
-      </ul>
-    </div>
-    <div class="col-8 component-msgs h-100">
-      <div id="div-msgs" class="msgs-scroll p-2 mh-100">
-        <div class="loader"></div>
-      </div>
-      <input id="input-msg" type="text" value="" placeholder="Mensaje..." />
-    </div>
-  </div>
-</div>
-
-
+<section class="chat-page">
+  <p class="eyebrow">Comunidad CityCode</p>
+  <h1>Conversación</h1>
+  <p>Consultas e ideas entre clientes. Participás con tu cuenta:
+    <strong>{{sessionUser.email}}</strong>.</p>
+  <p class="muted">Los mensajes son visibles para los demás clientes conectados.
+    No compartas datos privados. Se muestran los últimos cien.</p>
+  <ol id="div-msgs" class="chat-messages" aria-label="Mensajes recientes"></ol>
+  <p id="chat-status" role="status" aria-live="polite">Conectando con la
+    conversación…</p>
+  <form id="chat-form" class="chat-compose">
+    <label for="input-msg">Tu mensaje</label>
+    <textarea
+      id="input-msg"
+      name="message"
+      rows="3"
+      maxlength="1000"
+      required
+      aria-describedby="chat-help"
+    ></textarea>
+    <small id="chat-help">Hasta 1000 caracteres. El envío se confirma al
+      guardar.</small>
+    <button type="submit" class="button">Enviar mensaje</button>
+  </form>
+  <noscript>La conversación en tiempo real necesita JavaScript.</noscript>
+</section>
 <script src="/socket.io/socket.io.js"></script>
-<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="/js/chat.js"></script>
+<script src="/js/chat.js" defer></script>
