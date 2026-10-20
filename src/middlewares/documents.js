@@ -1,9 +1,8 @@
 import multer from "multer";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { UserModel } from "../dao/models/users.model.js";
 import { requiredDocuments } from "../services/accounts.service.js";
+import { storeDocuments } from "../services/document-storage.service.js";
 const receive = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024, files: 5, fields: 5 },
@@ -72,28 +71,19 @@ export function uploadDocuments(req, res, next) {
           buffer: file.buffer,
         };
       });
-      const root = req.app.locals.uploadRoot;
-      for (const file of plans) {
-        await mkdir(path.join(root, path.dirname(file.reference)), {
-          recursive: true,
-        });
-        await writeFile(path.join(root, file.reference), file.buffer, {
-          flag: "wx",
-        });
-        user.documents = user.documents.filter(
-          (document) => document.name !== file.name,
-        );
-        user.documents.push({ name: file.name, reference: file.reference });
-      }
-      await user.save();
-      res
-        .status(201)
-        .json({
-          status: "success",
-          documents: user.documents.map((document) => ({
-            name: document.name,
-          })),
-        });
+      await storeDocuments({
+        user,
+        plans,
+        root: req.app.locals.uploadRoot,
+        referenceInUse: (reference) =>
+          UserModel.exists({ "documents.reference": reference }),
+      });
+      res.status(201).json({
+        status: "success",
+        documents: user.documents.map((document) => ({
+          name: document.name,
+        })),
+      });
     } catch (err) {
       next(err);
     }

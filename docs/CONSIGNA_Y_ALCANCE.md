@@ -15,7 +15,7 @@ Se enlaza material docente; no se incorpora una copia pública sin autorización
 
 ## Recorrido y verificación
 
-“Pendiente” significa no certificado en esta revisión, no ausencia comprobada del código. La batería actual suma 65 pruebas unitarias, Mongo, HTTP y WebSocket. No equivale a aprobación docente ni despliegue validado.
+“Pendiente” significa no certificado en esta revisión, no ausencia comprobada del código. La batería actual suma 70 pruebas unitarias, Mongo, HTTP y WebSocket. No equivale a aprobación docente ni despliegue validado.
 
 | Bloque                          | Consigna y referencia                                                                                           | Estado y comprobación necesaria                                                                                                                       |
 | ------------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -67,6 +67,14 @@ seguridad de mantenimiento. Se ensayaron diez casos WebSocket reales y
 dos unitarios. No se afirma una auditoría de seguridad exhaustiva.
 
 La corrección nueva redondea el total del ticket a dos decimales y rechaza importes no finitos/cantidades no enteras. Es una decisión de mantenimiento, no una cita de la consigna.
+
+La carga de documentos compensa escrituras de disco ante fallos y elimina
+los archivos sustituidos sólo después de confirmar la metadata nueva.
+Comprueba que Mongo ya no los referencia antes de borrarlos. Si la base
+no permite aclarar un resultado incierto, conserva el archivo y registra
+limpieza diferida: prioriza no perder documentos frente a prometer una
+transacción distribuida inexistente. Rechaza tipos duplicados en un lote
+y rutas fuera de la raíz; cinco regresiones específicas cubren estos casos.
 
 ## Validación segura
 
