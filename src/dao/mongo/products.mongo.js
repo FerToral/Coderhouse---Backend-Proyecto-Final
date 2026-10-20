@@ -5,12 +5,12 @@ export class ProductDao {
   }
 
   async getById(id) {
-      const search = await ProductsModel.findById(id);
-      return search;
+    const search = await ProductsModel.findById(id);
+    return search;
   }
 
   async create(newProduct) {
-    await ProductsModel.create(newProduct);
+    return await ProductsModel.create(newProduct);
   }
 
   async updateById(id, updateData) {

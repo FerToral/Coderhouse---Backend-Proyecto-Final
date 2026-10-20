@@ -1,0 +1,20 @@
+<div class="page-heading"><p class="eyebrow">Administración / Cuentas</p><h1
+  >Usuarios</h1><p>Las cuentas premium requieren identificación, domicilio y
+    estado de cuenta.</p></div>
+<p id="account-message" role="status" aria-live="polite"></p>
+<div class="account-list">{{#each users}}<article class="account-row"><div><h2
+        >{{firstName}} {{lastName}}</h2><p>{{email}}</p><small>Rol actual:
+          {{rol}}</small></div>
+      {{#unless protected}}<div class="actions"><label for="role-{{_id}}">Nuevo
+            rol<select id="role-{{_id}}"><option
+                value="user"
+              >Usuario</option><option
+                value="premium"
+              >Premium</option></select></label><button
+            class="button secondary"
+            data-role="{{_id}}"
+          >Aplicar rol</button><button
+            class="text-button"
+            data-delete-user="{{_id}}"
+          >Eliminar cuenta</button></div>{{else}}<small>Administración protegida</small>{{/unless}}</article>{{/each}}</div>
+<script src="/js/accounts.js" defer></script>

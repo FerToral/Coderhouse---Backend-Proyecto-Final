@@ -1,15 +1,12 @@
-
-import { isValidPassword, createHash } from '../utils/bcrypt.js';
-import { userDao } from '../dao/factory.js';
-
+import { isValidPassword, createHash } from "../utils/bcrypt.js";
+import { userDao } from "../dao/factory.js";
 
 export class UserService {
- 
   async getAll() {
     const users = await userDao.getAll();
     return users;
   }
-  async getUsersPagination(page){
+  async getUsersPagination(page) {
     //TODO
     const users = await userDao.pagination(page);
     return users;
@@ -18,10 +15,9 @@ export class UserService {
     const user = await userDao.getByEmail(email);
     if (user && isValidPassword(password, user.password)) {
       return user;
-    } 
-    
+    }
+
     return false;
-    
   }
 
   async findUserByEmail(email) {
@@ -31,10 +27,21 @@ export class UserService {
   }
 
   async createOne(userToCreate) {
+    if (
+      typeof userToCreate.email !== "string" ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userToCreate.email) ||
+      typeof userToCreate.password !== "string" ||
+      userToCreate.password.length < 8
+    ) {
+      throw Object.assign(
+        new Error("Valid email and password of at least 8 characters required"),
+        { status: 400 },
+      );
+    }
     const existingUser = await this.findUserByEmail(userToCreate.email);
 
     if (existingUser) {
-      throw 'cannot create a user that allready exists';
+      throw Object.assign(new Error("Account already exists"), { status: 409 });
     }
 
     userToCreate.password = createHash(userToCreate.password);
@@ -50,34 +57,36 @@ export class UserService {
   }
 
   async updateOne(userUpdate) {
-    const {_id, ...updateData} = userUpdate
+    const { _id, ...updateData } = userUpdate;
     const userUptaded = await userDao.updateById(_id, updateData);
     return userUptaded;
   }
 
   async paginationProduct(limit, page, query, sort) {
-        
     const options = {
       limit: limit,
       page: page,
       ...query,
-      sort: sort
+      sort: sort,
     };
-  
+
     const products = await ProductsModel.paginate({}, options);
     const setLinks = () => {
-      let prevLink = '';
-      let nextLink = '';
-  
-      products.hasNextPage ? (nextLink = `?limit=${limit}&page=${products.nextPage}&query=${query}&sort=${sort}`) : (nextLink = null);
-      products.hasPrevPage ? (prevLink = `?limit=${limit}&page=${products.prevPage}&query=${query}&sort=${sort}`) : (prevLink = null);
+      let prevLink = "";
+      let nextLink = "";
+
+      products.hasNextPage
+        ? (nextLink = `?limit=${limit}&page=${products.nextPage}&query=${query}&sort=${sort}`)
+        : (nextLink = null);
+      products.hasPrevPage
+        ? (prevLink = `?limit=${limit}&page=${products.prevPage}&query=${query}&sort=${sort}`)
+        : (prevLink = null);
       products.prevLink = prevLink;
       products.nextLink = nextLink;
       return products;
     };
     setLinks();
-  
+
     return products;
   }
-  
 }

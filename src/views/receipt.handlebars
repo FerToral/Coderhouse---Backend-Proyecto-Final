@@ -1,0 +1,18 @@
+<section class="receipt">
+  <p class="eyebrow">Compra confirmada / Paso 2 de 2</p><div
+    class="confirmation-mark"
+    aria-hidden="true"
+  >✓</div>
+  <h1>Tu compra está lista.</h1><p>Guardá este comprobante para consultar tu
+    pedido.</p>
+  {{#if partial}}<p role="status">Algunos productos no tenían stock suficiente y
+      siguen en tu carrito. El total corresponde sólo a los productos comprados.</p>{{/if}}
+  <dl><div><dt>Pedido</dt><dd>{{ticket.code}}</dd></div><div><dt>Fecha</dt><dd
+      >{{date}}</dd></div><div><dt>Cuenta</dt><dd
+      >{{ticket.purchaser}}</dd></div><div><dt>Total</dt><dd class="price">$
+        {{money ticket.amount}}</dd></div></dl>
+  <p class="muted">Comprobante académico. No acredita un pago real ni una
+    operación comercial.</p>
+  <div class="actions"><a class="button" href="/products">Volver al catálogo</a><a
+      href="/carts/{{cartId}}"
+    >Ver mi carrito →</a></div></section>

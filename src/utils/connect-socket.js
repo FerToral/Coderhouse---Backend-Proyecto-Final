@@ -1,56 +1,35 @@
-//@ts-check
-
-import {Server} from 'socket.io';
-import { cartService, productService } from './main.js';
-import { ProductsModel } from "../dao/models/products.model.js";
+import { Server } from "socket.io";
 import { MsgModel } from "../dao/models/msgs.model.js";
-
-export async function connectSocket(httpServer){
-
-    const socketServer = new Server(httpServer);
-
-    socketServer.on('connection', (socket) =>{
-        
-        console.log("New client conect");
-
-        socket.on("new-product-created", async (newProduct) => {
-            try{
-            const newProductCompleted = {
-                ...newProduct,
-                thumbnails: newProduct.thumbnail || [],
-                status: true,
-            };
-            
-            await productService.addProduct(newProductCompleted)
-            //Busco el último
-            const latestProduct = await ProductsModel.findOne({}, {sort: {_id: -1}});
-            const newProductObject = latestProduct.toObject();
-            console.log(newProductObject)
-            socketServer.emit("newproduct", newProductObject);
-
-            }catch(error){
-            socketServer.emit("error", error.message);
-            }
-            
+export function connectSocket(server, sessionMiddleware) {
+  const io = new Server(server, { cors: false });
+  io.engine.use(sessionMiddleware);
+  io.use((socket, next) => {
+    const user = socket.request.session?.user;
+    return user?.email && user.rol !== "admin"
+      ? next()
+      : next(new Error("Login required"));
+  });
+  io.on("connection", (socket) => {
+    // Producto/carrito: mutaciones exclusivamente por REST, con políticas y propietario.
+    socket.on("msg_front_to_back", async (message) => {
+      try {
+        const text =
+          typeof message?.message === "string"
+            ? message.message.trim().slice(0, 1000)
+            : "";
+        if (!text) return;
+        await MsgModel.create({
+          user: socket.request.session.user.email,
+          message: text,
         });
-
-        socket.on("msg_front_to_back", async (msg) => {
-            const msgCreated = await MsgModel.create(msg);
-            const msgs = await MsgModel.find({});
-            socketServer.sockets.emit("all_msgs", msgs);
-        });
-
-        socket.on("delete-product", async (idToDelete) => {
-            await productService.deleteProduct(idToDelete);
-            socketServer.emit("delete-product-in-table", idToDelete);
-        })
-
-        socket.on("add-product", async (idToAdd,title) => {
-            //Carrito Default
-            const cid = '649797b077e8959bcadabdea';
-            await cartService.addProductToCart(cid,idToAdd);
-            socketServer.emit("notification-add-success", title);  
-        })
-        
-    })
+        io.emit(
+          "all_msgs",
+          await MsgModel.find({}).sort({ _id: -1 }).limit(100).lean(),
+        );
+      } catch {
+        socket.emit("chat-error", "No se pudo enviar el mensaje.");
+      }
+    });
+  });
+  return io;
 }

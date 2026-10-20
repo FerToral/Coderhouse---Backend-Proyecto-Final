@@ -1,36 +1,13 @@
-import RecoverTokensMongoose from "../DAO/mongo/models/recover-tokens.mongoose.js";
-
+import { RecoverTokensModel } from "../models/recover-tokens.model.js";
 class RecoverTokensDAO {
-  async create(data) {
-    try {
-      const token = new RecoverTokensMongoose(data);
-      const savedToken = await token.save();
-      return savedToken;
-    } catch (error) {
-      throw error;
-    }
+  create(data) {
+    return RecoverTokensModel.create(data);
   }
-
-  async findOne(query) {
-    try {
-      const foundToken = await RecoverTokensMongoose.findOne(query);
-      return foundToken;
-    } catch (error) {
-      throw error;
-    }
+  findOne(query) {
+    return RecoverTokensModel.findOne(query);
   }
-
-  async updateOne(query, update) {
-    try {
-      const updatedToken = await RecoverTokensMongoose.findOneAndUpdate(query, update, { new: true });
-      return updatedToken;
-    } catch (error) {
-      throw error;
-    }
+  updateOne(query, update) {
+    return RecoverTokensModel.findOneAndUpdate(query, update, { new: true });
   }
-
 }
-
-const recoverTokensDAO = new RecoverTokensDAO();
-
-export default recoverTokensDAO;
+export default new RecoverTokensDAO();

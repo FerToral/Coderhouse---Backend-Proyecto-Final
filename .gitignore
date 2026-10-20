@@ -1,4 +1,9 @@
-node_modules
-.env.development
-.env.production
-errors.log
+node_modules/
+.env
+.env.*
+!.env.example
+*.log
+coverage/
+src/public/img/
+uploads/
+.cache/
