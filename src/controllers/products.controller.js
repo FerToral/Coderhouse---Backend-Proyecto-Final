@@ -1,6 +1,5 @@
 import { ProductDTO } from "../dtos/productDTO.js";
 import { productService } from "../utils/main.js";
-import { ProductsModel } from "../dao/models/products.model.js";
 import { generateMockProducts } from "../utils/mocking.js";
 class ProductController {
   mockingPorduct(req, res) {
@@ -120,10 +119,9 @@ class ProductController {
           ].includes(key),
         ),
       );
-      const product = await ProductsModel.findByIdAndUpdate(
+      const product = await productService.updateProduct(
         req.params.pid,
         update,
-        { new: true, runValidators: true },
       );
       res.json({ status: "success", payload: new ProductDTO(product) });
     } catch (err) {

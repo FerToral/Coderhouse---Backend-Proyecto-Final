@@ -45,9 +45,10 @@ npm audit
 
 - `test/unit`: reglas del carrito y autorización sin base.
 - `test/integration`: transacciones Mongo, concurrencia, API HTTP, sesiones, permisos, documentos y recuperación. Crean bases temporales propias y nunca leen `MONGO_URL`; el correo se sustituye por un buzón en memoria.
-- `test/*.test.js`: prácticas históricas conservadas; no se incluyen automáticamente en la batería vigente. El test de usuario ya no abre una base externa ni elimina colecciones al importar.
+- `test/*.test.js`: Mocha/Chai/Supertest del curso; tres casos por router de productos, carritos y sesiones, más dos de modelo. Se incluyen con `npm run test:curso`, sin conexiones externas.
 
-La batería actual suma **65 pruebas**, con compra/cuentas por HTTP/Mongo,
+La batería suma **97 pruebas**:38unitarias,48de integración y11del curso;
+incluye compra/cuentas por HTTP/Mongo,
 chat WebSocket y documentación OpenAPI. Se comprobó además el flujo real de
 navegador: registro → catálogo → cantidad → compra → recibo, con vista
 estrecha y escritorio. Las pruebas no equivalen a aprobación docente ni
@@ -61,11 +62,13 @@ src/
   routes/       endpoints API y vistas
   controllers/  entrada HTTP y respuestas
   services/     reglas de compra, cuentas y recuperación
+  repositories/ contrato de persistencia de productos
   dao/          persistencia, modelos y transacciones
   middlewares/  autorización, validación y documentos
   views/        catálogo, carrito, recibo y administración
   public/       estilos y comportamiento de las vistas
 test/           pruebas unitarias e integrales
+practicas/      primeras entregas en memoria/archivos, API y sockets
 scripts/        demo efímera
 docs/           consigna, contratos y alcance
 ```
@@ -74,6 +77,18 @@ Swagger en `/apidocs` y JSON en `/apidocs.json` documentan productos,
 carritos y sesión actual: cookie real, permisos, cantidades y compra
 parcial. Los YAML antiguos se conservan, pero no se sirven como contratos
 actuales. Las otras rutas y límites están en [la guía de API](docs/API.md).
+
+## Recorrido de las primeras entregas
+
+[Productos y archivos](practicas/01-productos-y-archivos/README.md) permite
+ejecutar las etapas previas a Mongo: memoria, JSON, CRUD HTTP, carrito y
+catálogo en tiempo real. `npm run practica:memoria` o
+`npm run practica:archivos` abre la práctica local en el puerto8081.
+No comparte datos ni permisos con la tienda final.
+
+Para instalar la aplicación principal, consultar la
+[guía de despliegue](docs/DESPLIEGUE.md): contenedor sin secretos,
+sesiones persistentes, HTTPS, healthz y comprobaciones de cierre.
 
 ## Seguridad y límites
 

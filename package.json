@@ -4,7 +4,11 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "node --watch ./src/server.js --mode development",
-    "test": "npm run test:unit && npm run test:integration",
+    "test": "npm run test:unit && npm run test:integration && npm run test:curso",
+    "test:curso": "mocha --timeout 15000 test/Product.test.js test/Cart.test.js test/Sessions.test.js test/User.test.js",
+    "practica:archivos": "node practicas/01-productos-y-archivos/server.js file",
+    "practica:memoria": "node practicas/01-productos-y-archivos/server.js memory",
+    "admin:promover": "node scripts/promote-admin.js",
     "check:secrets": "node scripts/check-secrets.js",
     "test:unit": "node --test test/unit/*.test.js",
     "test:integration": "node --test --test-concurrency=1 test/integration/*.test.js",

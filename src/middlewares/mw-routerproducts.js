@@ -1,4 +1,4 @@
-import { ProductsModel } from "../dao/models/products.model.js";
+import { productRepository } from "../repositories/products.repository.js";
 export function parsePagination(query) {
   const limit = query.limit === undefined ? 10 : Number(query.limit);
   const page = query.page === undefined ? 1 : Number(query.page);
@@ -62,7 +62,7 @@ export async function validationProduct(req, res, next) {
         .status(400)
         .json({ status: "error", msg: "Invalid product fields" });
     }
-    if (await ProductsModel.exists({ code }))
+    if (await productRepository.findByCode(code))
       return res
         .status(409)
         .json({ status: "error", msg: "Product code already exists" });
@@ -96,7 +96,7 @@ export async function mayModifyProduct(req, res, next) {
     const user = req.session?.user;
     if (!user)
       return res.status(401).json({ status: "error", msg: "Login required" });
-    const product = await ProductsModel.findById(req.params.pid);
+    const product = await productRepository.getById(req.params.pid);
     if (!product)
       return res
         .status(404)

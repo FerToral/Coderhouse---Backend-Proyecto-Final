@@ -1,10 +1,8 @@
-//@ts-check
-import { cartService, productService } from "../utils/main.js";
+import { cartService } from "../utils/main.js";
 import { TicketModel } from "../dao/models/tickets.model.js";
 import { UserModel } from "../dao/models/users.model.js";
 
 class CartController {
-  constructor() {}
   async renderReceipt(req, res, next) {
     try {
       const ticket = await TicketModel.findOne({
@@ -12,9 +10,11 @@ class CartController {
         purchaser: req.session.user.email,
       }).lean();
       if (!ticket)
-        return res.status(404).render("error-page", {
-          msg: "No encontramos ese comprobante en tu cuenta.",
-        });
+        return res
+          .status(404)
+          .render("error-page", {
+            msg: "No encontramos ese comprobante en tu cuenta.",
+          });
       return res.render("receipt", {
         title: "Compra confirmada · CityCode",
         ticket,
@@ -22,169 +22,128 @@ class CartController {
         date: new Date(ticket.purchase_datetime).toLocaleString("es-AR"),
         partial: req.query.partial === "1",
       });
-    } catch (err) {
-      next(err);
+    } catch (error) {
+      next(error);
     }
   }
-  async renderCart(req, res) {
-    const cartId = req.params.cid;
+  async renderCart(req, res, next) {
     try {
-      const cartProducts = await cartService.getPopulatedCartProducts(cartId);
-      const rows = cartProducts.map((product) => ({
+      const rows = (
+        await cartService.getPopulatedCartProducts(req.params.cid)
+      ).map((product) => ({
         ...product,
         subtotal: product.price * product.quantity,
       }));
       return res.render("cart", {
         title: "Mi carrito · CityCode",
-        cartId,
+        cartId: req.params.cid,
         cartProducts: rows,
         total: rows.reduce((sum, p) => sum + p.subtotal, 0),
       });
     } catch (error) {
-      return res.status(404).render("error-page", { error: error.message });
+      next(error);
     }
   }
-  async getCart(req, res) {
-    const cartId = req.params.cid;
+  async getCart(req, res, next) {
     try {
-      const cartFound = await cartService.getCartByIdPopulate(cartId);
-      return res.status(200).json({ status: "success", data: cartFound });
+      res.json({
+        status: "success",
+        data: await cartService.getCartByIdPopulate(req.params.cid),
+      });
     } catch (error) {
-      res
-        .status(404)
-        .json({ status: "error", data: `Cart not found. ${error.message}` });
+      next(error);
     }
   }
-  async postCart(req, res) {
+  async postCart(req, res, next) {
     try {
       if (req.session.user.rol === "admin")
         return res
           .status(403)
           .json({ status: "error", msg: "Administrators cannot buy" });
       if (req.session.user.cart)
-        return res
-          .status(200)
-          .json({
-            status: "success",
-            data: await cartService.getCartById(req.session.user.cart),
-          });
-      const newCartMongo = await cartService.createCart();
+        return res.json({
+          status: "success",
+          data: await cartService.getCartById(req.session.user.cart),
+        });
+      const cart = await cartService.createCart();
       await UserModel.updateOne(
         { _id: req.session.user._id },
-        { cart: String(newCartMongo._id) },
+        { cart: String(cart._id) },
       );
-      req.session.user.cart = String(newCartMongo._id);
-      res.status(201).json({ status: "success", data: newCartMongo });
+      req.session.user.cart = String(cart._id);
+      res.status(201).json({ status: "success", data: cart });
     } catch (error) {
-      res.status(400).json({ status: "error", data: "Error creating cart" });
+      next(error);
     }
   }
-
-  async addProductToCart(req, res) {
-    const cartId = req.params.cid;
-    const prodId = req.params.pid;
-
+  async addProductToCart(req, res, next) {
     try {
-      const productFound = await productService.getProductById(prodId);
       await cartService.addProductToCart(
-        cartId,
-        prodId,
+        req.params.cid,
+        req.params.pid,
         req.session.user.email,
       );
-      return res.status(201).json({
-        status: "success",
-        data: `${productFound} product correctly added`,
-      });
+      res.status(201).json({ status: "success", data: "Product added" });
     } catch (error) {
-      res
-        .status(error.status || 400)
-        .json({ status: "error", data: error.message });
+      next(error);
     }
   }
-
-  async deleteProduct(req, res) {
-    const { cid, pid } = req.params;
-
+  async deleteProduct(req, res, next) {
     try {
-      const result = await cartService.deleteProductFromCart(cid, pid);
-      if (!result)
-        return res.status(200).json({
-          status: "success",
-          data: `Product is no longer in the cart.`,
-        });
-      res.status(200).json({
-        status: "success",
-        data: `Product removed from cart. ${result}`,
-      });
+      await cartService.deleteProductFromCart(req.params.cid, req.params.pid);
+      res.json({ status: "success", data: "Product removed from cart" });
     } catch (error) {
-      res.status(404).json({ status: "error", data: error.message });
+      next(error);
     }
   }
-
-  async deleteCart(req, res) {
-    const cId = req.params.cid;
-
+  async deleteCart(req, res, next) {
     try {
-      await cartService.emptyCart(cId);
-      res.status(200).json({ status: "success", data: `Cart emptied` });
+      await cartService.emptyCart(req.params.cid);
+      res.json({ status: "success", data: "Cart emptied" });
     } catch (error) {
-      res
-        .status(error.status || 400)
-        .json({ status: "error", data: error.message });
+      next(error);
     }
   }
-
-  async putCart(req, res) {
-    const cId = req.params.cid;
-    const pUpdate = req.body;
-
+  async putCart(req, res, next) {
     try {
-      const result = await cartService.updateProductsFromCart(cId, pUpdate);
-      res.status(200).json({ status: "success", data: result });
+      const result = await cartService.updateProductsFromCart(
+        req.params.cid,
+        req.body,
+      );
+      res.json({ status: "success", data: result });
     } catch (error) {
-      res.status(404).json({ status: "error", data: error.message });
+      next(error);
     }
   }
-
-  async putStock(req, res) {
-    const { cid, pid } = req.params;
-    const stockUpdate = Number(req.body.quantity ?? req.body.stock);
-
+  async putStock(req, res, next) {
     try {
       const result = await cartService.updateStockProductoFromCart(
-        cid,
-        pid,
-        stockUpdate,
+        req.params.cid,
+        req.params.pid,
+        Number(req.body.quantity ?? req.body.stock),
       );
-      res.status(200).json({ status: "success", data: result });
+      res.json({ status: "success", data: result });
     } catch (error) {
-      res
-        .status(error.status || 400)
-        .json({ status: "error", data: error.message });
+      next(error);
     }
   }
-
-  async purchase(req, res) {
-    const cartId = req.params.cid;
+  async purchase(req, res, next) {
     try {
       const { ticket, productsNotPurchased } = await cartService.purchase(
-        cartId,
+        req.params.cid,
         req.session?.user?.email,
       );
-
-      return res.status(ticket ? 201 : 200).json({
-        status: "success",
-        msg: "Purchase completed",
-        ticket,
-        productsNotPurchased,
-      });
+      res
+        .status(ticket ? 201 : 200)
+        .json({
+          status: "success",
+          msg: "Purchase completed",
+          ticket,
+          productsNotPurchased,
+        });
     } catch (error) {
-      return res.status(error.status || 500).json({
-        status: "error",
-        msg: `An error occurred during the purchase process. ${error}`,
-      });
+      next(error);
     }
   }
 }
-
 export const cartController = new CartController();

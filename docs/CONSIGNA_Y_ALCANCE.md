@@ -1,93 +1,104 @@
 # Proyecto final · Programación Backend · comisión 43340
 
-Aplicación de comercio electrónico construida progresivamente durante la cursada de Coderhouse de 2023. La referencia de implementación es el repositorio propio, commit base `60aa485fc165822ae99cd08f2bfa774cee9a20db`; las actividades independientes no sustituyen el proyecto final.
+Ecommerce desarrollado durante la cursada de Coderhouse de 2023. El recorrido
+va desde ProductManager hasta compras, cuentas, administración y despliegue.
+Las primeras entregas se ejecutan en [prácticas](../practicas/01-productos-y-archivos/README.md);
+la aplicación principal conserva Mongo y sus políticas de sesión.
 
-## Fuentes de la consigna
+## Fuentes de las consignas
 
-- [Manual de desafíos I](https://docs.google.com/presentation/d/18m-LE4PYwPNjcwV6dkU6aZEo7K6PPTrmtN-zYzdL8CU/edit): productos, archivos, Express, primera entrega, vistas/sockets y segunda entrega.
-- [Manual II](https://docs.google.com/presentation/d/1i7eWntVScSiTCONf23o3N6ZFYldpEbbf04o3mAskT-s/edit): login, Passport, capas y tercera preentrega; contrastado con las 25 diapositivas de la copia local.
-- [Manual III](https://docs.google.com/presentation/d/11btvu6TMnBHCw8UVk7aoNeeR1bjhO-WX6Q4iCr37imk/edit): errores, logger, roles, recuperación, documentación, pruebas y cierre.
-- [Rúbrica del proyecto final](https://drive.google.com/file/d/1fj0ukMVLnCwk2_RNvsNqIWiy37gA62Yx/view): ejecución, políticas de sesión, compra y capas. Es una plantilla sin evaluación personal; su puntuación vacía no es una nota de Fernando.
-- [Instrumentos de evaluación](https://drive.google.com/drive/folders/1NA8-ToFid3QPub9lyLVPKB7nPDnSxhHU): listas de las tres preentregas.
-- [Clases de la comisión](https://drive.google.com/drive/folders/1GWHYzMpsHxAxoejp63VYRtDD6BEyI0yV): las diapositivas locales de clase 23 (17–20) y clase 24/archivo 46 (43–46) amplían el cierre.
+- [Manual I](https://docs.google.com/presentation/d/18m-LE4PYwPNjcwV6dkU6aZEo7K6PPTrmtN-zYzdL8CU/edit): memoria, archivos, Express, vistas/sockets y primeras dos preentregas.
+- [Manual II](https://docs.google.com/presentation/d/1i7eWntVScSiTCONf23o3N6ZFYldpEbbf04o3mAskT-s/edit): acceso, capas, Repository, ticket y tercera preentrega; referencia por diapositiva.
+- [Manual III](https://docs.google.com/presentation/d/11btvu6TMnBHCw8UVk7aoNeeR1bjhO-WX6Q4iCr37imk/edit): mocking, logger, recuperación, premium, documentación, pruebas y final.
+- [Rúbrica final](https://drive.google.com/file/d/1fj0ukMVLnCwk2_RNvsNqIWiy37gA62Yx/view): ejecución, sesiones, compra y arquitectura. La copia localizada es una plantilla, no una evaluación personal.
+- [Listas de preentregas](https://drive.google.com/drive/folders/1NA8-ToFid3QPub9lyLVPKB7nPDnSxhHU).
+- [Clases de la comisión](https://drive.google.com/drive/folders/1GWHYzMpsHxAxoejp63VYRtDD6BEyI0yV): clase 23, diapositivas 17–20, y clase 24 (archivo 46), 43–46, precisan documentos y cierre.
 
-Se enlaza material docente; no se incorpora una copia pública sin autorización de redistribución. Los archivos locales conservados y las fuentes enlazadas deben permanecer relacionados. Los números de clases del manual general (hasta 46) y los de la comisión (hasta 24) no coinciden: se relacionan por consigna, no por número. Las indicaciones internas al profesor y los marcadores de plantilla no son requisitos del alumno.
+El manual general y la comisión usan numeraciones distintas: se relacionan
+por tema y entrega. Los marcadores “editar” e instrucciones para docentes
+no agregan requisitos. Se enlaza el material; no se redistribuyen copias
+sin permiso acreditado.
 
-## Recorrido y verificación
+El checklist de segunda entrega pide además error para páginas e IDs
+inexistentes: los casos HTTP específicos verifican ambos y conservan
+un catálogo vacío válido en la página1. La plantilla del checklist no
+acredita una calificación personal.
 
-“Pendiente” significa no certificado en esta revisión, no ausencia comprobada del código. La batería actual suma 70 pruebas unitarias, Mongo, HTTP y WebSocket. No equivale a aprobación docente ni despliegue validado.
+## Primer módulo
 
-| Bloque                          | Consigna y referencia                                                                                           | Estado y comprobación necesaria                                                                                                                       |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Productos en memoria y archivos | Manual I, clases 2/4: campos en inglés, código único, ID estable, CRUD persistente                              | Preservar actividades anteriores; ejecución y cobertura pendientes                                                                                    |
-| API inicial                     | Manual I, clases 6/8: productos y carritos, routers, ID autogenerado, cantidad acumulada                        | Contrastar contrato real y regresiones HTTP                                                                                                           |
-| Vistas y sockets                | Manual I, clase 10: listado y actualización de altas/bajas                                                      | Implementación histórica presente; validar integración y permisos                                                                                     |
-| Mongo y colecciones             | Manual I, práctica integradora: productos, carritos, mensajes; preservar FileSystem                             | Arranque explícito sin secretos literales y pruebas en replica set efímero. El historial previo requiere revocación de claves                         |
-| Segunda preentrega              | Manual I, clase 17: filtros, paginación, precio asc/desc, enlaces, populate y edición de carrito                | Filtros/paginación/precio, edición de carrito y límites inválidos probados por HTTP; ampliar bordes de IDs y contratos históricos                     |
-| Capas, DAO y DTO                | Tercera preentrega y rúbrica                                                                                    | Mantener separación; carrito ahora inyecta dependencias, sin cargar conexiones al importar el servicio                                                |
-| Roles y propiedad               | Rúbrica y manual III: admin no compra; premium no compra productos propios                                      | Verificado en HTTP y compra Mongo; roles refrescados desde base en cada petición autenticada                                                          |
-| Cierre de compra                | Tercera preentrega: stock suficiente, ticket, conservar no comprados y devolver IDs                             | Servicio, middleware y adaptadores probados; compra parcial conserva no comprados                                                                     |
-| Integridad de compra            | Fiabilidad de implementación, no requisito nuevo atribuido al curso                                             | Transacción Mongo verificada: rollback ante fallo de ticket/carrito, concurrencia de última unidad y doble confirmación                               |
-| Errores y mocking               | Manual III, clase 32: 100 productos y errores frecuentes                                                        | Verificar implementación, formato y aislamiento                                                                                                       |
-| Logger                          | Manual III, clase 34: niveles, consola dev, info prod, archivo errores y loggerTest                             | Verificar sin registrar credenciales ni datos privados                                                                                                |
-| Recuperación de acceso          | Manual III, práctica 37: correo, expiración de una hora, no reutilizar contraseña, renovación del enlace        | Implementada y probada con buzón simulado: hash de token, expiración, no reutilización de contraseña ni enlace                                        |
-| Premium                         | Manual III, práctica 37: owner, edición/borrado por rol, conversión user/premium                                | REST y compra protegidos; retiradas escrituras por sockets que evitaban políticas. Promoción/democión probadas                                        |
-| Documentación API               | Manual III, clase 39: Swagger de productos/carritos                                                             | Reconciliar con endpoints reales y respuestas                                                                                                         |
-| Pruebas HTTP                    | Manual III, clase 41: al menos tres pruebas por router products/carts/sessions; complementaria                  | Batería actual Node test + assert + Supertest, con más de tres casos por router; la consigna histórica proponía Mocha/Chai, conservados como contexto |
-| Documentos y actividad          | Manual III, práctica 44; clase 23/17–20: documentos, destinos Multer, last_connection y requisitos premium      | Implementados y probados: documentos privados con límites y firma, acceso propio/admin, tres comprobantes; actividad en login/logout                  |
-| Administración final            | Manual III, final; clase 24/43: GET de datos mínimos, baja por inactividad de dos días con correo y vista admin | Vista/listado, rol, baja individual y limpieza probados sobre usuarios ficticios; SMTP real pendiente                                                 |
-| Aviso de borrado                | Manual III, final: correo al premium dueño del producto eliminado                                               | Probado con buzón simulado, sin enviar correo externo                                                                                                 |
-| Interfaz de compra              | Manual III, final y clase 24/44: catálogo → carrito → confirmación → ticket                                     | Implementada; recorrido real en navegador y revisión estrecha/escritorio; estados vacíos/error/parcial y total visibles                               |
-| Despliegue                      | Manual III, final y clase 24/45: proceso completo accesible                                                     | Pendiente; no contratar servicios ni desplegar con secretos históricos                                                                                |
+| ID   | Entrega y requisito                                                                                                            | Implementación y comprobación                                                                                             |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| I-01 | Clase 2: productos vacíos, campos en inglés, obligatorios, code único, ID generado, consulta y Not Found                       | ProductManager en memoria; firma original de seis campos; test/unit/archivos.test.js                                      |
+| I-02 | Clase 4: constructor con path, CRUD asíncrono, persistencia e ID inmutable                                                     | ProductManager con archivo; cola, JSON y contador persistente; reinicio, concurrencia, errores y copia defensiva probados |
+| I-03 | Clase 6: Express, GET productos, limit opcional y pid                                                                          | API de prácticas; límites e identificadores validados                                                                     |
+| I-04 | Primera preentrega: routers productos/carritos, CRUD y campos id/title/description/code/price/status/stock/category/thumbnails | API de prácticas; ID generado y cantidad acumulada; JSON de productos/carritos separados                                  |
+| I-05 | Clase 10: Handlebars, home y realtimeproducts; altas/bajas reflejadas por sockets                                              | Vistas de prácticas, mutaciones HTTP y sockets de lectura; prueba real entre pestañas                                     |
+| I-06 | Integradora: Mongo, productos/carritos/mensajes y conservar FileSystem                                                         | Aplicación principal en Mongo; etapa de archivos ejecutable sin sustituir las transacciones finales                       |
+| I-07 | Segunda preentrega: limit10/page1, filtros categoría/disponibilidad, orden precio, metadata y enlaces                          | ProductService → Repository → DAO; API HTTP y Mocha prueban filtro/orden/páginas                                          |
+| I-08 | Carrito: populate, borrar ítem/vaciar, reemplazar ítems, modificar cantidad; vistas products/carts                             | Rutas API y vistas del ecommerce; pruebas HTTP y Mongo                                                                    |
 
-## Alcance y decisiones
+## Segundo módulo
 
-La pasarela de pago no se evalúa en el final según el manual III y la clase 24/45. No se añade React, Nest ni un proveedor de pagos como supuesto requisito. Las vistas administrativas de usuarios sí figuran en la consigna; el editor visual de productos no es obligatorio. Las prácticas complementarias se registran como tales, aunque algunas políticas premium también aparecen en la rúbrica final.
+| ID    | Fuente y requisito                                                                      | Implementación y comprobación                                                                                                              |
+| ----- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| II-01 | Manual II/7: login, redirección a productos, bienvenida, rol                            | Passport local, sesión y vistas; pruebas de acceso HTTP                                                                                    |
+| II-02 | II/10: bcrypt, estrategias local y GitHub                                               | Registro con hash y login local probados; GitHub implementado, validación externa pendiente                                                |
+| II-03 | II/13–14: datos de usuario, carrito, rol por defecto user, current seguro, sesión o JWT | Modelo User, carrito automático y UserDTO; se eligen sesiones. Nombres firstName/lastName/rol conservan el contrato propio                 |
+| II-04 | II/17: routing, controladores, DAO, vistas, entorno                                     | Separación en src; .env.example sin secretos. El arranque no abre conexiones al importar servicios                                         |
+| II-05 | II/20: Repository; Factory opcional                                                     | ProductRepository separa consultas, paginación y reserva atómica; servicio inyectable y pruebas sin Mongo                                  |
+| II-06 | II/21: Ticket con código único, fecha, importe, comprador; permisos admin/user/chat     | Modelo y servicio de ticket; admin no compra ni usa chat. Handshake y mensajes revalidan sesión/rol                                        |
+| II-07 | II/22: compra con stock suficiente, parcial y devolución de IDs no comprados            | Transacción Mongo conserva pendientes, descuenta comprados y confirma ticket/carrito; rollback, concurrencia y doble confirmación probados |
 
-El manual II, diapositiva 20, presenta Factory como opcional y solicita
-Repository. La comisión contiene anotaciones diferentes sobre servicio–DAO.
-La implementación mantiene sus servicios y DAO; no se declara certificada
-una capa Repository adicional ni se reestructura por la sola aparición
-del patrón en el manual general.
+La práctica de negocios/usuarios/órdenes de la clase 15 es un ejercicio
+paralelo. Su texto servicio–DAO no elimina el requisito Repository de la
+tercera preentrega del ecommerce. Factory es opcional; el final usa Mongo.
+Memoria y FileSystem se eligen en sus prácticas independientes.
 
-### Contraste del manual II
+## Tercer módulo y final
 
-| Diapositivas | Requisito                                     | Comprobación                                                                                                                   |
-| ------------ | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| 7            | Login, bienvenida y roles                     | Login redirige a productos; vista muestra identidad. Admin se configura fuera del código, no con contraseña incrustada         |
-| 10           | bcrypt y Passport local/GitHub                | Registro/login local probados; GitHub requiere nuevas claves y verificación externa                                            |
-| 13–14        | Usuario, carrito y current, sesión o JWT      | Sesiones elegidas; DTO mínimo y carrito probados. No se exige implementar simultáneamente JWT                                  |
-| 17           | Routing, controladores, DAO, vistas y entorno | Capas existentes; variables documentadas en ejemplo sin secretos. La petición histórica de adjuntar .env no implica publicarlo |
-| 20           | Factory opcional y Repository                 | Diferencia documental anterior registrada, sin fingir patrón adicional validado                                                |
-| 21–22        | Ticket, permisos y compra parcial             | Compra, rollback/concurrencia y propiedad probados; premium se incorpora por la etapa posterior                                |
-| 21           | Chat para clientes, no admin                  | Handshake y cada envío/receptor recargan sesión/rol; logout corta sockets, sin mutaciones de productos por este canal          |
+| ID     | Fuente y requisito                                                                                                                | Implementación y comprobación                                                                                                          |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| III-01 | Clase 32: mockingproducts con 100 productos, formato Mongo                                                                        | IDs ObjectId válidos, códigos únicos, esquema validado; endpoint sólo admin y sin persistencia                                         |
+| III-02 | Clase 32: catálogo de errores habituales                                                                                          | Catálogo HTTP en services/errors; middleware común para validación, conflicto, disponibilidad y errores internos sin detalles privados |
+| III-03 | Clase 34: debug/http/info/warning/error/fatal; consola dev, info prod; errors.log sólo error/fatal; loggerTest                    | Winston configurado por entorno; endpoint protegido responde tras emitir los seis niveles                                              |
+| III-04 | Práctica 37: recuperación por correo, una hora, enlace de un uso, no repetir contraseña, renovar expirado                         | Token hasheado, consumo único y vistas; pruebas HTTP con buzón simulado                                                                |
+| III-05 | Práctica 37: premium, owner por defecto admin, CRUD propio/admin, no comprar producto propio                                      | Políticas en rutas y compra, relectura del rol; pruebas de acceso y concurrencia                                                       |
+| III-06 | Clase 39: Swagger de productos y carritos                                                                                         | /apidocs y /apidocs.json contrastados con rutas reales; se documenta current adicionalmente, no se exige toda la sesión                |
+| III-07 | Clase 41, complementario: Mocha/Chai/Supertest, mínimo tres casos por router products/carts/sessions, no sólo códigos de estado   | npm run test:curso: tres casos por router y dos de modelo; base efímera, identidad propia y aserciones de datos persistidos            |
+| III-08 | Práctica 44; comisión23/18: documents{name,reference}, last_connection en login/logout y router users                             | Modelo, servicios, rutas y pruebas de actividad                                                                                        |
+| III-09 | Práctica44; comisión23/19–20, complementario: carga múltiple Multer; profiles/products/documents; tres comprobantes para promover | Almacenamiento privado y validado; identificación/domicilio/estado de cuenta; promoción condicionada y democión libre                  |
+| F-01   | Manual III final, comisión24/43: GET usuarios mínimo, baja por inactividad de dos días con correo                                 | Administración, DTO mínimo y limpieza probados con usuarios ficticios; fallo de correo conserva la cuenta                              |
+| F-02   | Final: interfaz de usuarios para cambiar rol/eliminar                                                                             | Vista /users protegida; no permite eliminar al admin conectado                                                                         |
+| F-03   | Final, comisión24/44: borrar producto premium notifica a su dueño                                                                 | Buzón simulado acredita destinatario y aviso; correo real pendiente                                                                    |
+| F-04   | Final: cerrar compra desde vistas                                                                                                 | Catálogo → carrito → confirmación → recibo; estados vacío, error, parcial y total; API y navegador comprobados                         |
+| F-05   | Final, comisión24/45: despliegue obligatorio                                                                                      | Preparación en Dockerfile, healthz, host/puerto, volumen y guía; falta construir imagen y validar HTTPS/servicios reales               |
+| F-06   | Rúbrica: aplicación ejecutable, MVC/capas, políticas de sesión e integridad de compra                                             | Demo local con Mongo efímero; pruebas de HTTP, WebSocket, compra y persistencia                                                        |
 
-El chat muestra texto, nunca HTML aportado por usuarios; son mejoras de
-seguridad de mantenimiento. Se ensayaron diez casos WebSocket reales y
-dos unitarios. No se afirma una auditoría de seguridad exhaustiva.
+La pasarela de pagos **no se evalúa** en el final según manual III y
+comisión24/45. No se agrega un proveedor de pagos ni un frontend distinto
+como supuesto requisito. Las actividades complementarias figuran como tales,
+aunque las políticas premium también aparecen en la rúbrica.
 
-La corrección nueva redondea el total del ticket a dos decimales y rechaza importes no finitos/cantidades no enteras. Es una decisión de mantenimiento, no una cita de la consigna.
-
-La carga de documentos compensa escrituras de disco ante fallos y elimina
-los archivos sustituidos sólo después de confirmar la metadata nueva.
-Comprueba que Mongo ya no los referencia antes de borrarlos. Si la base
-no permite aclarar un resultado incierto, conserva el archivo y registra
-limpieza diferida: prioriza no perder documentos frente a prometer una
-transacción distribuida inexistente. Rechaza tipos duplicados en un lote
-y rutas fuera de la raíz; cinco regresiones específicas cubren estos casos.
-
-## Validación segura
+## Verificación y cierre
 
 ```sh
-npm run test:unit
+npm test
+npm run check:secrets
+npm audit
 ```
 
-Las pruebas ejecutan el servicio y el middleware reales con dependencias simuladas, sin Mongo, correo, Twilio ni claves. El arranque actual no usa secretos literales ni el .env histórico. Las credenciales previas siguen en Git y necesitan revisión/revocación por su titular; no se verificó si siguen activas. Las pruebas Mongo/HTTP crean su propia base efímera y correo simulado.
+Las pruebas crean bases y archivos temporales, nunca usan MONGO_URL ni
+credenciales históricas. El correo se inyecta como buzón en memoria.
+Los tests del curso usan Mocha/Chai/Supertest; las regresiones de mantenimiento
+usan node:test y cubren además rollback, concurrencia, documentos y chat.
 
-Para cerrar la cursada faltan las actividades históricas, la diferencia
-Repository de la comisión, servicios SMTP/OAuth reales y despliegue HTTPS
-con secretos nuevos. Swagger activo cubre productos, carritos y current;
-las otras rutas tienen descripción en API.md, no se presentan todas
-como contratos OpenAPI certificados. La antigua vista de altas/bajas
-por sockets permanece como antecedente, sin reactivar escrituras que
-eludan permisos. Estas pruebas no acreditan por sí solas todo el curso.
+Las mejoras de transacciones, redondeo monetario, archivos privados, escape
+HTML, límite de mensajes y recuperación con token hasheado son decisiones
+de mantenimiento, no citas textuales de las consignas.
+
+El cierre local del código se distingue del cierre externo:
+OAuth y SMTP requieren credenciales nuevas; el despliegue requiere HTTPS,
+Mongo replica set y almacenamiento persistente. El historial contiene
+credenciales expuestas que su titular debe revisar/revocar.
+Ver [guía de despliegue](DESPLIEGUE.md). No hay aprobación docente ni
+instalación pública certificada por estas pruebas.

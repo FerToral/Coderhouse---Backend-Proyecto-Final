@@ -1,4 +1,5 @@
 import winston from "winston";
+import path from "node:path";
 const production = process.env.NODE_ENV === "production";
 const testing = process.env.NODE_ENV === "test";
 export const logger = winston.createLogger({
@@ -13,7 +14,7 @@ export const logger = winston.createLogger({
     ...(!testing
       ? [
           new winston.transports.File({
-            filename: "errors.log",
+            filename: path.join(process.env.LOG_DIR || ".", "errors.log"),
             level: "error",
           }),
         ]

@@ -51,14 +51,19 @@ export class CartService {
   }
 
   async deleteProductFromCart(cartId, productId) {
-    return this.dao.deleteProduct(cartId, productId);
+    const result = await this.dao.deleteProduct(cartId, productId);
+    if (!result) throw fallo("Product not found in cart", 404);
+    return result;
   }
 
   async updateStockProductoFromCart(cartId, productId, quantity) {
     if (!Number.isSafeInteger(quantity) || quantity < 1) {
       throw fallo("Quantity must be a positive integer");
     }
-    return this.dao.updateStock(cartId, productId, quantity);
+    const result = await this.dao.updateStock(cartId, productId, quantity);
+    if (result?.matchedCount === 0)
+      throw fallo("Product not found in cart", 404);
+    return result;
   }
 
   async emptyCart(cartId) {
@@ -85,6 +90,9 @@ export class CartService {
     ) {
       throw fallo("Duplicate product in cart");
     }
+    await this.getCartById(cartId);
+    for (const item of productsUpdate)
+      await this.products.getProductById(item.product);
     return this.dao.updateCart(cartId, productsUpdate);
   }
 

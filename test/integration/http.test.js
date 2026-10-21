@@ -223,3 +223,65 @@ test("usuarios: listado administrativo no queda abierto a visitantes o clientes"
   const a = await account();
   await a.agent.get("/api/users").expect(403);
 });
+
+test("logger y mocking: sólo admin, respuesta completa y sin persistir productos", async () => {
+  await request(app).get("/loggerTest").expect(401);
+  await request(app).get("/mockingproducts").expect(401);
+  const client = await account();
+  await client.agent.get("/mockingproducts").expect(403);
+  const admin = await account("admin@example.test", "admin");
+  const logged = await admin.agent
+    .get("/loggerTest")
+    .timeout({ deadline: 2000 })
+    .expect(200);
+  assert.deepEqual(logged.body.levels, [
+    "debug",
+    "http",
+    "info",
+    "warning",
+    "error",
+    "fatal",
+  ]);
+  const mocked = await admin.agent.get("/mockingproducts").expect(200);
+  assert.equal(mocked.body.length, 100);
+  assert.equal(new Set(mocked.body.map((p) => p.code)).size, 100);
+  assert.equal(await ProductsModel.countDocuments(), 0);
+});
+
+test("errores HTTP: identificador inválido usa el catálogo sin detalles internos", async () => {
+  const response = await request(app)
+    .get("/api/products/not-an-id")
+    .expect(400);
+  assert.equal(response.body.code, "INVALID_INPUT");
+  assert.equal("stack" in response.body, false);
+});
+
+test("checklist segunda entrega: página inexistente muestra error y retorno al catálogo", async () => {
+  await ProductsModel.create(sample());
+  await request(app).get("/api/products?page=2").expect(404);
+  const view = await request(app).get("/products?page=2").expect(404);
+  assert.match(view.text, /No existe esa página/);
+  assert.match(view.text, /Volver al catálogo/);
+  await ProductsModel.deleteMany({});
+  assert.equal(
+    (await request(app).get("/api/products").expect(200)).body.payload.length,
+    0,
+  );
+});
+
+test("checklist segunda entrega: pid inexistente no modifica el carrito", async () => {
+  const a = await account(),
+    missing = "000000000000000000000099";
+  const url = "/api/carts/" + a.cart;
+  await a.agent.post(url + "/products/" + missing).expect(404);
+  await a.agent
+    .put(url + "/products/" + missing)
+    .send({ quantity: 1 })
+    .expect(404);
+  await a.agent.delete(url + "/products/" + missing).expect(404);
+  await a.agent
+    .put(url)
+    .send([{ product: missing, quantity: 1 }])
+    .expect(404);
+  assert.equal((await CartsModel.findById(a.cart)).products.length, 0);
+});

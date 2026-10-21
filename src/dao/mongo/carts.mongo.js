@@ -51,7 +51,7 @@ class CartDAO {
   }
 
   async updateStock(cId, pId, stockUpdate) {
-    await CartsModel.updateOne(
+    return CartsModel.updateOne(
       { _id: cId, "products.product": pId },
       { $set: { "products.$.quantity": stockUpdate } },
     );
@@ -65,6 +65,7 @@ class CartDAO {
     return await CartsModel.updateOne(
       { _id: cartId },
       { $set: { products: productsUpdate } },
+      { runValidators: true },
     );
   }
 }

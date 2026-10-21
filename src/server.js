@@ -14,14 +14,17 @@ try {
     client: mongoose.connection.getClient(),
     ttl: 86400 * 7,
   });
-  const app = createApp({ sessionStore: store });
+  const app = createApp({
+    sessionStore: store,
+    healthCheck: () => mongoose.connection.readyState === 1,
+  });
   const server = createServer(app);
   app.locals.chatIO = connectSocket(server, app.locals.sessionMiddleware);
-  server.listen(env.port, "127.0.0.1", () =>
+  server.listen(env.port, env.host, () =>
     logger.info("Ecommerce disponible en http://localhost:" + env.port),
   );
   const shutdown = () =>
-    server.close(async () => {
+    app.locals.chatIO.close(async () => {
       await store.close();
       await mongoose.disconnect();
       process.exit(0);

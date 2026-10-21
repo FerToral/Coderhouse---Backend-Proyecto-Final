@@ -31,13 +31,15 @@ import { sessionUser } from "./utils/session-user.js";
 import { sendNotification } from "./utils/notifications.js";
 import loggerRouter from "./routes/api/logger-api.router.js";
 import mockingRouter from "./routes/api/mocking.router.js";
+import errorResponse from "./middlewares/errors/index.js";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 export function createApp({
   sessionStore,
   sessionSecret = env.sessionSecret,
   mailer = sendNotification,
-  uploadRoot = path.resolve("uploads"),
+  uploadRoot = env.uploadRoot || path.resolve("uploads"),
+  healthCheck = () => false,
 } = {}) {
   if (!sessionSecret || sessionSecret.length < 32)
     throw new Error("SESSION_SECRET must have at least 32 characters");
@@ -47,7 +49,17 @@ export function createApp({
   app.locals.sendNotification = mailer;
   app.locals.uploadRoot = uploadRoot;
   app.disable("x-powered-by");
-  if (env.mode === "production") app.set("trust proxy", 1);
+  app.set("trust proxy", env.trustProxy);
+  app.get("/healthz", async (req, res) => {
+    try {
+      const ready = await healthCheck();
+      res
+        .status(ready ? 200 : 503)
+        .json({ status: ready ? "ok" : "unavailable" });
+    } catch {
+      res.status(503).json({ status: "unavailable" });
+    }
+  });
   app.use(express.json({ limit: "100kb" }));
   app.use(express.urlencoded({ extended: false, limit: "100kb" }));
   const sessionMiddleware = session({
@@ -147,18 +159,7 @@ export function createApp({
   app.use((req, res) =>
     res.status(404).render("error-page", { msg: "No encontramos esa página." }),
   );
-  app.use((err, req, res, next) => {
-    const status =
-      err.status ||
-      (err.name === "CastError" || err.name === "ValidationError" ? 400 : 500);
-    req.logger?.error(
-      "Request failed: " + req.method + " " + req.path + " (" + status + ")",
-    );
-    res.status(status).json({
-      status: "error",
-      msg: status >= 500 ? "Internal server error" : err.message,
-    });
-  });
+  app.use(errorResponse);
   return app;
 }
 function checkLogin(req, res, next) {
