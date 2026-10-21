@@ -1,6 +1,23 @@
-<form action='/api/sessions/login' method='POST'>
-  <input id='email' name='email' type='text' placeholder='email' />
-  <input id='password' name='password' type='text' placeholder='password' />
-  <input type='submit' value='login' />
-</form>
-<a href='/register'>aun no tengo cuenta..</a>
+<section class="auth-layout"><div><p class="eyebrow">Tu cuenta / CityCode</p><h1
+    >Qué bueno<br />verte de nuevo.</h1><p class="lead">Tu selección, en un solo
+      lugar.</p></div>
+  <form action="/login" method="post" class="auth-form"><h2>Ingresar</h2>{{#if
+      msg
+    }}<p role="alert">{{msg}}</p>{{/if}}
+    <label for="email">Correo electrónico</label><input
+      id="email"
+      name="email"
+      type="email"
+      autocomplete="username"
+      required
+    />
+    <label for="password">Contraseña</label><input
+      id="password"
+      name="password"
+      type="password"
+      autocomplete="current-password"
+      required
+    />
+    <button class="button" type="submit">Ingresar →</button><p>¿Primera vez?
+      <a href="/register">Crear una cuenta</a></p><a href="/recovery">Olvidé mi
+      contraseña</a></form></section>

@@ -1,58 +1,46 @@
-//@ts-check
-
-import { logger } from "../utils/logger.js";
 import { recoveryService } from "../services/recovery.services.js";
-
 class RecoveryController {
-  async sendEmail(req, res) {
+  async sendEmail(req, res, next) {
     try {
-      const { email } = req.body;
-      const result = await recoveryService.sendEmail(email);
-      if (result !== null) {
-        res.status(200).render("error", { emailSend: "Email Enviado! Revisa tu casilla." });
-      } else {
-        return res.status(400).render("error", { errorMsg: "Email inexistente" });
-      }
-    } catch (error) {
-        logger.error(error.message);
-        res.status(500).json({ success: "error", msg: `Server Error. ${error}` });
+      await recoveryService.sendEmail(
+        req.body.email,
+        req.app.locals.sendNotification,
+      );
+      res.render("recovery", {
+        msg: "Si la cuenta existe, enviamos un enlace válido por una hora.",
+      });
+    } catch (err) {
+      next(err);
     }
   }
-
   async findToken(req, res) {
     try {
-      const { token, email } = req.query;
-      const foundToken = await recoveryService.findToken(token, email);
-      if (foundToken && foundToken.expire > Date.now()) {
-        const validToken = foundToken.token;
-        const validEmail = foundToken.email;
-        const title = "Mongo Athlete";
-        return res.status(200).render("recovery-pass", { title, validToken, validEmail });
-      } else {
-        return res.status(404).render("error", { errorMsg: "Token expirado o inválido" });
-      }
-    } catch (e) {
-      logger.error(e.message);
-      res.status(501).json({ status: "error", msg: `Server Error. ${e.message}`});
+      await recoveryService.findToken(req.query.token, req.query.email);
+      res.render("recovery-pass", {
+        token: req.query.token,
+        email: req.query.email,
+      });
+    } catch {
+      res
+        .status(410)
+        .render("recovery", {
+          msg: "El enlace venció o no es válido. Podés pedir uno nuevo.",
+        });
     }
   }
-
-  async newPassword(req, res) {
+  async newPassword(req, res, next) {
     try {
-      let { token, email, password } = req.body;
-      const foundToken = await recoveryService.findToken(token, email);
-      const userEmail = foundToken.email;
-      const foundUser = await recoveryService.newPassword(userEmail, password, token);
-      if (foundToken && foundToken.expire > Date.now() && password) {
-        return res.status(200).render("error", { changePassword: "Contraseña Actualizada!" });
-      } else {
-        return res.status(404).render("error", { errorMsg: "Token expirado o inválido" });
-      }
-    } catch (e) {
-      logger.error(e.message);
-      throw new Error(e);
+      await recoveryService.newPassword(
+        req.body.email,
+        req.body.password,
+        req.body.token,
+      );
+      res.render("login-form", {
+        msg: "Contraseña actualizada. Ingresá nuevamente.",
+      });
+    } catch (err) {
+      next(err);
     }
   }
 }
-
 export const recoveryController = new RecoveryController();

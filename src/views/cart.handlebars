@@ -1,14 +1,47 @@
-<div class="container">
-    <h2>Lista de Productos del Carrito</h2>
-    {{#each cartProducts}}
-        <ul class="list-group mb-4">
-            <li class="list-group-item">Title: {{title}}</li>
-            <li class="list-group-item">Price: {{price}}</li>
-            <li class="list-group-item">Stock: {{stock}}</li>
-            <li class="list-group-item">Thumbnail:<a href="{{thumbnail}}">Product's Image</a></li>
-            <li class="list-group-item">Quantity: {{quantity}}</li>
-        </ul>
-    {{/each}}
-    
-
-</div>
+<div class="page-heading"><p class="eyebrow">Tu selección / Paso 1 de 2</p><h1
+  >Mi carrito</h1><a href="/products">← Seguir explorando</a></div>
+<p
+  id="store-message"
+  class="status-message"
+  role="status"
+  aria-live="polite"
+></p>
+{{#if cartProducts.length}}
+  <div class="cart-layout" data-cart="{{cartId}}">
+    <section class="cart-lines" aria-label="Productos del carrito">
+      {{#each cartProducts}}<article class="cart-line"><div><p
+              class="eyebrow"
+            >{{category}}</p><h2>{{title}}</h2><p>$
+              {{money price}}
+              por unidad</p></div>
+          <div class="quantity-control"><label
+              for="qty-{{_id}}"
+            >Cantidad</label><input
+              id="qty-{{_id}}"
+              type="number"
+              min="1"
+              step="1"
+              value="{{quantity}}"
+              data-quantity="{{_id}}"
+            /><button
+              class="text-button"
+              data-remove="{{_id}}"
+            >Quitar</button></div>
+          <strong>$ {{money subtotal}}</strong></article>{{/each}}
+    </section>
+    <aside class="order-summary" aria-label="Resumen de compra"><p
+        class="eyebrow"
+      >Resumen</p><h2>Total estimado</h2><p class="total">$
+        {{money total}}</p><p>La disponibilidad se comprueba al confirmar. Los
+        productos sin stock permanecen en tu carrito y no se cobran.</p><button
+        class="button full"
+        id="purchase"
+      >Confirmar compra →</button><small>Proyecto académico. No se procesa un
+        pago real.</small></aside></div>
+{{else}}<section class="empty-state"><span
+      class="empty-symbol"
+      aria-hidden="true"
+    >＋</span><h2>Tu carrito está esperando una buena idea.</h2><p>Encontrá algo
+      que te guste para empezar.</p><a class="button" href="/products">Explorar
+      catálogo →</a></section>{{/if}}
+<script src="/js/store.js" defer></script>

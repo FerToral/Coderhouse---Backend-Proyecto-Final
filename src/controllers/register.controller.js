@@ -1,29 +1,24 @@
-
+import { beginSession } from "../utils/session-user.js";
 class RegisterController {
-    async getRegisterForm(req, res) {
-        return res.render('register-form', {});
+  getRegisterForm(req, res) {
+    return res.render("register-form");
+  }
+  async registerUser(req, res, next) {
+    try {
+      if (!req.user)
+        return res
+          .status(400)
+          .render("register-form", { msg: "No se pudo crear la cuenta." });
+      await beginSession(req, req.user);
+      return res.redirect("/products");
+    } catch (err) {
+      next(err);
     }
-
-    async registerUser(req, res, next) {
-        if (!req.user) {
-            return res.json({ error: 'something went wrong' });
-        }
-        req.session.user = { 
-            _id: req.user._id.toString(), 
-            email: req.user.email, 
-            firstName: req.user.firstName, 
-            lastName: req.user.lastName, 
-            rol: req.user.rol 
-        };
-        
-        return res.redirect('/');
-    }
-
-    async failRegister(req, res) {
-        return res.render('error-page', {
-            msg: 'Error Register'
-        });
-    }
+  }
+  failRegister(req, res) {
+    return res
+      .status(400)
+      .render("register-form", { msg: "Revisá los datos de la cuenta." });
+  }
 }
-
 export const registerController = new RegisterController();

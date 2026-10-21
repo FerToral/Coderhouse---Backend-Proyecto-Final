@@ -1,32 +1,27 @@
-//@ts-check
-
 import { UserDTO } from "../dtos/userDTO.js";
-
-class SessionController{
-    async getProfile(req, res){
-        const user = req.session.user;
-        return res.render('profile', { user: user });
+import { beginSession } from "../utils/session-user.js";
+class SessionController {
+  getProfile(req, res) {
+    return res.render("profile", { user: new UserDTO(req.session.user) });
+  }
+  testAdmin(req, res) {
+    return res.json({ status: "success", msg: "Administrator session" });
+  }
+  async githubAuth(req, res, next) {
+    try {
+      req.user.last_connection = new Date();
+      await req.user.save();
+      await beginSession(req, req.user);
+      res.redirect("/products");
+    } catch (err) {
+      next(err);
     }
-    async testAdmin(req, res){
-        return res.send('datos super secretos clasificados sobre los nuevos ingresos a boca juniors');
-    }
-
-    async githubAuth(req, res){
-        req.session.user = req.user;
-        // Successful authentication, redirect home.
-        res.redirect('/');
-    }
-
-    async current(req, res){
-        const sesion = new UserDTO(req.session.user)
-        return res.status(200).json({
-            status: 'success',
-            msg: 'datos de la session',
-            payload: sesion,
-        });
-    }
-    
-
+  }
+  current(req, res) {
+    return res.json({
+      status: "success",
+      payload: new UserDTO(req.session.user),
+    });
+  }
 }
-
 export const sessionController = new SessionController();

@@ -5,16 +5,19 @@ export class ProductDao {
   }
 
   async getById(id) {
-      const search = await ProductsModel.findById(id);
-      return search;
+    const search = await ProductsModel.findById(id);
+    return search;
   }
 
   async create(newProduct) {
-    await ProductsModel.create(newProduct);
+    return await ProductsModel.create(newProduct);
   }
 
   async updateById(id, updateData) {
-    await ProductsModel.updateOne({ _id: id }, updateData);
+    return ProductsModel.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    });
   }
 
   async deleteById(id) {
@@ -22,7 +25,17 @@ export class ProductDao {
   }
 
   async findByCode(code) {
-    return await ProductsModel.find({ code: code });
+    return ProductsModel.findOne({ code });
+  }
+  paginate(filter, options) {
+    return ProductsModel.paginate(filter, options);
+  }
+  reserveStock(id, quantity, session) {
+    return ProductsModel.updateOne(
+      { _id: id, stock: { $gte: quantity }, status: { $ne: false } },
+      { $inc: { stock: -quantity } },
+      { session },
+    );
   }
 }
 

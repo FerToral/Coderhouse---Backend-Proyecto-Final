@@ -1,85 +1,58 @@
-//@ts-check
-
-import { ProductsModel } from "../dao/models/products.model.js";
-import { productDao } from "../dao/factory.js";
+import { productRepository } from "../repositories/products.repository.js";
 
 export class ProductService {
-    #products=[];
-    constructor(){
-     
-    }
+  constructor(repository = productRepository) {
+    this.repository = repository;
+  }
 
-    async paginationProduct(limit, page, query, sort) {
-        
-        const options = {
-          limit: limit,
-          page: page,
-          ...query,
-          sort: sort
-        };
-      
-        const products = await ProductsModel.paginate({}, options);
-        const setLinks = () => {
-          let prevLink = '';
-          let nextLink = '';
-      
-          products.hasNextPage ? (nextLink = `?limit=${limit}&page=${products.nextPage}&query=${query}&sort=${sort}`) : (nextLink = null);
-          products.hasPrevPage ? (prevLink = `?limit=${limit}&page=${products.prevPage}&query=${query}&sort=${sort}`) : (prevLink = null);
-          products.prevLink = prevLink;
-          products.nextLink = nextLink;
-          return products;
-        };
-        setLinks();
-      
-        return products;
-    }
-    
-    async getProducts(){
-        this.#products = await productDao.getAll()
-        return this.#products;
-    }
-    
-    async getProductById(id){
-        try{
-            const search = await productDao.getById(id);
-            if(!search)
-                throw new Error('Product not found'); 
-            return search;
-       
-        }catch(error){
-            throw error
-        }
-        
-    }
-    async updateProduct(id, updateData){
-        await productDao.updateById(id, updateData)
-   
-    }
-    async deleteProduct(id){
-        await productDao.deleteById(id);
-    }
-    async #validationProduct(newProduct){
-        const search = await productDao.updateById(newProduct.code);
-        const codeRepeate = search.length > 0?true:false;
-        const allValuesExist = Object.entries(newProduct).every(([key, value]) => key === 'thumbnails' || (!!value && value !== ''));
-
-        if(codeRepeate){
-            console.log();
-            throw new Error('Error. Repeated Product Code');
-        }
-        if(!allValuesExist){
-            throw new Error('Error. Entering empty, null or undefined fields');
-        }
-
-    
-    }
-    async addProduct(newProduct){
-        try{
-            await productDao.create(newProduct)
-        }catch(error){
-            throw new Error(`${error.message}. Error adding product to MongoDB`)
-        }
-        
-    
-    }
+  async paginationProduct(limit, page, query, sort) {
+    const products = await this.repository.paginate(query, {
+      limit,
+      page,
+      sort: sort ? { price: sort === "asc" ? 1 : -1 } : { _id: 1 },
+    });
+    if (page > Math.max(1, products.totalPages))
+      throw Object.assign(new Error("No existe esa página del catálogo."), {
+        status: 404,
+      });
+    const criterion =
+      query.category ||
+      (query.status === undefined ? "" : String(query.status));
+    const link = (target) =>
+      "?" +
+      new URLSearchParams({
+        limit: String(limit),
+        page: String(target),
+        query: criterion,
+        sort,
+      });
+    products.prevLink = products.hasPrevPage ? link(products.prevPage) : null;
+    products.nextLink = products.hasNextPage ? link(products.nextPage) : null;
+    return products;
+  }
+  getProducts() {
+    return this.repository.getAll();
+  }
+  async getProductById(id) {
+    const product = await this.repository.getById(id);
+    if (!product)
+      throw Object.assign(new Error("Product not found"), { status: 404 });
+    return product;
+  }
+  async updateProduct(id, changes) {
+    const product = await this.repository.updateById(id, changes);
+    if (!product)
+      throw Object.assign(new Error("Product not found"), { status: 404 });
+    return product;
+  }
+  reserveStock(id, quantity, session) {
+    return this.repository.reserveStock(id, quantity, session);
+  }
+  deleteProduct(id) {
+    return this.repository.deleteById(id);
+  }
+  // Conservar códigos nativos (p.ej.11000) para traducir duplicados a409.
+  addProduct(product) {
+    return this.repository.create(product);
+  }
 }

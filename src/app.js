@@ -1,128 +1,167 @@
-//@ts-check
 import express from "express";
-import session from 'express-session';
+import session from "express-session";
 import passport from "passport";
-import { initializePassport } from "./config/passport.config.js";
-import MongoStore from 'connect-mongo';
-import cookieParser from "cookie-parser";
-import handlebars from 'express-handlebars';
-import {__dirname} from './utils/main.js';
-import { connectSocket } from "./utils/connect-socket.js";
-import productsApiRouter from "./routes/api/products-api.router.js";
-import {usersApiRouter} from "./routes/api/users-api.router.js";
-import cartsApiRouter from "./routes/api/carts-api.router.js";
-import sessionsApiRouter from "./routes/api/sessions-api.router.js";
-import registerRouter from './routes/views/register.router.js';
-import sessionsRouter from "./routes/views/sessions.router.js";
-import loginRouter from "./routes/views/login.router.js";
-import logoutRouter from "./routes/views/logout.router.js";
-import productsRouter from "./routes/views/products.router.js"
-import { usersHtmlRouter } from './routes/views/users.router.js';
-import homeRouter from "./routes/views/home.router.js";
-import profileRouter from "./routes/views/profile.router.js";
-import cartsRouter from "./routes/views/carts.router.js";
-import chatsRouter from "./routes/views/chats.router.js";
-import recovery from "./routes/views/recovery.js";
-import { UserDTO } from "./dtos/userDTO.js";
-import { isAdmin, isUser } from "./middlewares/auth.js";
-import compression from "express-compression";
-import mockingRouter from "./routes/api/mocking.router.js";
-import errorHandler from "./middlewares/errors/index.js"
-import { addLogger, logger } from "./utils/logger.js";
-import loggerRouter from "./routes/api/logger-api.router.js";
+import handlebars from "express-handlebars";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import swaggerJSDoc from "swagger-jsdoc";
 import swaggerUiExpress from "swagger-ui-express";
-import enviroment from "./config/config.js";
+import { apiDocumentation } from "./docs/openapi.js";
+import { initializePassport } from "./config/passport.config.js";
+import env from "./config/config.js";
+import { addLogger } from "./utils/logger.js";
+import { isAdmin, isUser } from "./middlewares/auth.js";
+import productsApiRouter from "./routes/api/products-api.router.js";
+import cartsApiRouter from "./routes/api/carts-api.router.js";
+import sessionsApiRouter from "./routes/api/sessions-api.router.js";
+import { usersApiRouter } from "./routes/api/users-api.router.js";
+import productsRouter from "./routes/views/products.router.js";
+import cartsRouter from "./routes/views/carts.router.js";
+import registerRouter from "./routes/views/register.router.js";
+import loginRouter from "./routes/views/login.router.js";
+import logoutRouter from "./routes/views/logout.router.js";
+import sessionsRouter from "./routes/views/sessions.router.js";
+import profileRouter from "./routes/views/profile.router.js";
+import homeRouter from "./routes/views/home.router.js";
+import chatsRouter from "./routes/views/chats.router.js";
+import recoveryRouter from "./routes/views/recovery.js";
+import { usersHtmlRouter } from "./routes/views/users.router.js";
+import { UserModel } from "./dao/models/users.model.js";
+import { sessionUser } from "./utils/session-user.js";
+import { sendNotification } from "./utils/notifications.js";
+import loggerRouter from "./routes/api/logger-api.router.js";
+import mockingRouter from "./routes/api/mocking.router.js";
+import errorResponse from "./middlewares/errors/index.js";
 
-const app = express();
-const port = enviroment.port;
-app.use(compression({
-  brotli:{enable:true, zlib:{}}
-}))
-const httpServer = app.listen(port, () => {
-  logger.info(`Server runing on port http://localhost:${port}`)
-});
-
-connectSocket(httpServer);
-
-const swaggerOptions = {
-  definition:{
-    openapi: '3.0.1',
-    info:{
-      title:"Ecommerce Coder Documentation",
-      description: "API implemented with swagger to document our eccommerce project"
+const root = path.dirname(fileURLToPath(import.meta.url));
+export function createApp({
+  sessionStore,
+  sessionSecret = env.sessionSecret,
+  mailer = sendNotification,
+  uploadRoot = env.uploadRoot || path.resolve("uploads"),
+  healthCheck = () => false,
+} = {}) {
+  if (!sessionSecret || sessionSecret.length < 32)
+    throw new Error("SESSION_SECRET must have at least 32 characters");
+  if (!sessionStore && env.mode === "production")
+    throw new Error("Persistent session store required");
+  const app = express();
+  app.locals.sendNotification = mailer;
+  app.locals.uploadRoot = uploadRoot;
+  app.disable("x-powered-by");
+  app.set("trust proxy", env.trustProxy);
+  app.get("/healthz", async (req, res) => {
+    try {
+      const ready = await healthCheck();
+      res
+        .status(ready ? 200 : 503)
+        .json({ status: ready ? "ok" : "unavailable" });
+    } catch {
+      res.status(503).json({ status: "unavailable" });
     }
-  },
-  apis: [`${__dirname}/docs/**/*.yaml`]
-}
-
-const specs = swaggerJSDoc(swaggerOptions);
-app.use('/apidocs', swaggerUiExpress.serve, swaggerUiExpress.setup(specs));
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-app.use(
-  session({
-    secret: 'jhasdkjh671246JHDAhjd',
+  });
+  app.use(express.json({ limit: "100kb" }));
+  app.use(express.urlencoded({ extended: false, limit: "100kb" }));
+  const sessionMiddleware = session({
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({ 
-      mongoUrl: 'mongodb+srv://fernandojosetoralez:53XqqoJQriX69dpU@backend-cluster.10rbwrs.mongodb.net/?retryWrites=true&w=majority', 
-      ttl: 86400 * 7 
-    }),
-  })
-);
-
-/* CONFIG PASSPORT */ 
-initializePassport();
-app.use(passport.initialize());
-app.use(passport.session());
-
-/* CONFIGURACION DEL MOTOR DE HANDLEBARS */
-app.engine('handlebars', handlebars.engine());
-app.set('views',__dirname+'/views');
-app.set('view engine', 'handlebars');
-
-
-/* ARCHIVOS PUBLICOS */
-app.use(express.static(__dirname+'/public'));
-
-/* LOGGER */
-app.use(addLogger)
-
-
-/* ENDPOINTS */
-app.use('/', homeRouter);
-app.use('/api/sessions', sessionsApiRouter);
-app.use('/api/products', isAdmin, productsApiRouter);
-app.use('/api/carts', isUser, cartsApiRouter);
-app.use('/api/users',usersApiRouter);
-app.use('/api/sessions/current', (req, res) => {
-  const sesion = new UserDTO(req.session.user)
-  return res.status(200).json({
-    status: 'success',
-    msg: 'datos de la session',
-    payload: sesion,
+    store: sessionStore,
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: env.mode === "production",
+      maxAge: 86400000,
+    },
   });
-});
-app.use('/loggerTest', loggerRouter);
-
-app.use('/register', registerRouter)
-app.use('/login', loginRouter);
-app.use('/logout', logoutRouter);
-app.use("/recovery", recovery);
-app.use('/sessions', sessionsRouter);
-app.use('/profile', profileRouter);
-app.use('/users', usersHtmlRouter);
-app.use('/products',productsRouter);
-app.use('/carts', cartsRouter);
-app.use('/chats', isUser, chatsRouter);
-app.use('/mockingproducts', mockingRouter);
-app.use(errorHandler);
-app.get("*", (req, res) => {
-  res.status(404).json({ status: "error", msg: "Page not found" });
-});
-
-
-
+  app.locals.sessionMiddleware = sessionMiddleware;
+  app.use(sessionMiddleware);
+  // Bloquea mutaciones desde otros sitios; clientes no-browser sin Origin siguen admitidos.
+  app.use((req, res, next) => {
+    if (!["GET", "HEAD", "OPTIONS"].includes(req.method) && req.get("Origin")) {
+      try {
+        if (new URL(req.get("Origin")).host !== req.get("host"))
+          return res
+            .status(403)
+            .json({ status: "error", msg: "Invalid origin" });
+      } catch {
+        return res.status(403).json({ status: "error", msg: "Invalid origin" });
+      }
+    }
+    next();
+  });
+  initializePassport();
+  app.use(passport.initialize(), passport.session(), addLogger);
+  app.use(async (req, res, next) => {
+    try {
+      if (req.session?.user?._id) {
+        const user = await UserModel.findById(req.session.user._id)
+          .select("firstName lastName email rol cart")
+          .lean();
+        if (!user) {
+          delete req.session.user;
+          return next();
+        }
+        req.session.user = sessionUser(user);
+      }
+      next();
+    } catch (err) {
+      next(err);
+    }
+  });
+  app.use((req, res, next) => {
+    res.locals.sessionUser = req.session?.user;
+    next();
+  });
+  app.use((req, res, next) => {
+    res.locals.isAdmin = req.session?.user?.rol === "admin";
+    res.set("X-Content-Type-Options", "nosniff");
+    next();
+  });
+  app.engine(
+    "handlebars",
+    handlebars.engine({
+      helpers: {
+        money: (value) =>
+          Number(value || 0).toLocaleString("es-AR", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }),
+      },
+    }),
+  );
+  app.set("views", path.join(root, "views"));
+  app.set("view engine", "handlebars");
+  app.use(express.static(path.join(root, "public")));
+  const specs = swaggerJSDoc({
+    definition: apiDocumentation,
+    apis: [],
+  });
+  app.get("/apidocs.json", (req, res) => res.json(specs));
+  app.use("/apidocs", swaggerUiExpress.serve, swaggerUiExpress.setup(specs));
+  app.use("/api/sessions", sessionsApiRouter);
+  app.use("/api/products", productsApiRouter);
+  app.use("/api/carts", isUser, cartsApiRouter);
+  app.use("/api/users", usersApiRouter);
+  app.use("/loggerTest", isAdmin, loggerRouter);
+  app.use("/mockingproducts", isAdmin, mockingRouter);
+  app.use("/register", registerRouter);
+  app.use("/login", loginRouter);
+  app.use("/logout", logoutRouter);
+  app.use("/sessions", sessionsRouter);
+  app.use("/profile", checkLogin, profileRouter);
+  app.use("/users", checkLogin, usersHtmlRouter);
+  app.use("/products", productsRouter);
+  app.use("/carts", cartsRouter);
+  app.use("/chats", isUser, chatsRouter);
+  app.use("/recovery", recoveryRouter);
+  app.use("/", homeRouter);
+  app.use((req, res) =>
+    res.status(404).render("error-page", { msg: "No encontramos esa página." }),
+  );
+  app.use(errorResponse);
+  return app;
+}
+function checkLogin(req, res, next) {
+  return req.session?.user ? next() : res.redirect("/login");
+}

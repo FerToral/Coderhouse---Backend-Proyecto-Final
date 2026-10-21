@@ -1,54 +1,54 @@
 const socket = io();
+const form = document.getElementById("chat-form");
+const input = document.getElementById("input-msg");
+const status = document.getElementById("chat-status");
+const messages = document.getElementById("div-msgs");
+const button = form.querySelector("button");
 
-
-/* Ingreso de mail en el chat */
-let email = "";
-asyncWraper();
-
-async function asyncWraper() {
-  const { value: emailIngresado } = await Swal.fire({
-    title: "Enter Email",
-    input: "text",
-    inputLabel: "Your email",
-    inputValue: "",
-    showCancelButton: false,
-    allowOutsideClick: false,
-    inputValidator: (value) => {
-      if (!value) {
-        return "Incomplete fields";
-      }
-    },
-  });
-  email = emailIngresado;
-  document.getElementById("span-email").innerHTML = email;
-}
-
-/* Chats */
-
-const chatBox = document.getElementById("input-msg");
-
-chatBox.addEventListener("keyup", ({ key }) => {
-  if (key == "Enter") {
-    socket.emit("msg_front_to_back", {
-      message: chatBox.value,
-      user: email,
-    });
-    chatBox.value = "";
+socket.on("all_msgs", (entries) => {
+  const fragment = document.createDocumentFragment();
+  for (const entry of entries) {
+    const item = document.createElement("li");
+    const author = document.createElement("strong");
+    const text = document.createElement("p");
+    author.textContent = entry.user;
+    text.textContent = entry.message; // Nunca interpretar contenido del usuario como HTML.
+    item.append(author, text);
+    fragment.append(item);
   }
+  messages.replaceChildren(fragment);
+  status.textContent = entries.length
+    ? "Conversación actualizada."
+    : "Todavía no hay mensajes.";
 });
 
-socket.on("all_msgs", (msgs) => {
-  const divMsgs = document.getElementById("div-msgs");
-  let content = "";
-  msgs.forEach((msg) => {
-    if(msg.user == email){
-      content = content + `<p>Yo: ${msg.message}</p>`;
-    }
-    else{
-      content = content + `<p>${msg.user} dice: ${msg.message}</p>`;
-    }
-    
-  });
-  divMsgs.innerHTML = content;
-  window.scrollTo(0, document.body.scrollHeight);
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const message = input.value.trim();
+  if (!message || message.length > 1000) return;
+  button.disabled = true;
+  socket
+    .timeout(5000)
+    .emit("msg_front_to_back", { message }, (error, response) => {
+      button.disabled = false;
+      if (error || !response?.ok) {
+        status.textContent =
+          response?.error || "No se confirmó el envío. Tu texto se conserva.";
+        return;
+      }
+      input.value = "";
+      input.focus();
+      status.textContent = "Mensaje enviado.";
+    });
+});
+socket.on("connect_error", () => {
+  status.textContent =
+    "No se pudo conectar. Revisá tu sesión e intentá ingresar nuevamente.";
+});
+socket.on("disconnect", () => {
+  status.textContent =
+    "Chat desconectado. Los mensajes no enviados permanecen en el campo.";
+});
+socket.on("chat-error", (message) => {
+  status.textContent = message;
 });

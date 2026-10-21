@@ -1,49 +1,50 @@
-//@ts-check
-class LoginController{
-
-    async renderLoginPage(req, res){
-        try {
-            req.logger.info("Render Login")
-            const title = 'CityCode - Login';
-            return res.render('login-form', { title });
-        } catch (err) {
-            res.status(501).send({ status: 'error', msg: 'Server Error', error: err });
-        }
+import { UserModel } from "../dao/models/users.model.js";
+import { cartService } from "../utils/main.js";
+import { beginSession } from "../utils/session-user.js";
+class LoginController {
+  renderLoginPage(req, res) {
+    return res.render("login-form", { title: "Ingresar · CityCode" });
+  }
+  async authenticateLogin(req, res, next) {
+    try {
+      if (!req.user)
+        return res
+          .status(401)
+          .render("error-page", { msg: "Credenciales inválidas." });
+      if (!req.user.cart && req.user.rol !== "admin")
+        req.user.cart = String((await cartService.createCart())._id);
+      req.user.last_connection = new Date();
+      await req.user.save();
+      await beginSession(req, req.user);
+      return res.redirect("/products");
+    } catch (err) {
+      next(err);
     }
-
-    async authenticateLogin(req, res){
-        if (!req.user) {
-            return res.json({ error: 'invalid credentials' });
-          }
-        req.session.user = { 
-        _id: req.user._id.toString(), 
-        email: req.user.email, 
-        firstName: req.user.firstName, 
-        rol: req.user.rol 
-        };
-    
-        return res.redirect('/products');
+  }
+  renderFailLoginPage(req, res) {
+    return res
+      .status(401)
+      .render("login-form", { msg: "Correo o contraseña incorrectos." });
+  }
+  renderGithubLoginPage(req, res) {
+    return res.render("login-github");
+  }
+  async logout(req, res, next) {
+    try {
+      if (req.session?.user?._id)
+        await UserModel.updateOne(
+          { _id: req.session.user._id },
+          { last_connection: new Date() },
+        );
+      const sessionId = req.session.id;
+      req.session.destroy((err) => {
+        if (err) return next(err);
+        req.app.locals.chatIO?.in(sessionId).disconnectSockets(true);
+        return res.clearCookie("connect.sid").redirect("/login");
+      });
+    } catch (err) {
+      next(err);
     }
-    //TODO Mejorar mensajes de error
-    async renderFailLoginPage(req, res){
-        return res.render('error-page', {
-            msg: 'Login Error'
-        });
-    }
-
-    async renderGithubLoginPage(req, res){
-        res.render('login-github');
-    }
-    //TODO Manejar devolucion de error
-    async logout(req, res){
-        req.session.destroy((err) => {
-            if (err) {
-              return res.status(500).render('error-page', { msg: 'No se pudo cerrar su session' });
-            }
-            return res.redirect('/login');
-        });
-    }
-
+  }
 }
-
 export const loginController = new LoginController();

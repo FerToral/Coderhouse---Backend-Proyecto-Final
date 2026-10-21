@@ -1,121 +1,108 @@
-//@ts-check
-import passport from 'passport';
-import local from 'passport-local';
-import { UserModel } from '../dao/models/users.model.js';
-import fetch from 'node-fetch';
-import GitHubStrategy from 'passport-github2';
-import { createHash, isValidPassword } from '../utils/bcrypt.js';
-import { UserService } from '../services/users.service.js';
-import { userService } from '../utils/main.js';
-const LocalStrategy = local.Strategy
+import passport from "passport";
+import local from "passport-local";
+import GitHubStrategy from "passport-github2";
+import { randomBytes } from "node:crypto";
+import { UserModel } from "../dao/models/users.model.js";
+import { userService, cartService } from "../utils/main.js";
+import { isValidPassword } from "../utils/bcrypt.js";
+import env from "./config.js";
 
 export function initializePassport() {
   passport.use(
-    'github',
-    new GitHubStrategy(
-      {
-        clientID: 'Iv1.9045c56b270780b7',
-        clientSecret: '68c70e872431be989087018b7dac339b5062f93a',
-        callbackURL: 'http://localhost:8080/api/sessions/githubcallback',
-      },
-      async (accesToken, _, profile, done) => {
-        console.log(profile);
+    "login",
+    new local.Strategy(
+      { usernameField: "email" },
+      async (email, password, done) => {
         try {
-          const res = await fetch('https://api.github.com/user/emails', {
-            headers: {
-              Accept: 'application/vnd.github+json',
-              Authorization: 'Bearer ' + accesToken,
-              'X-Github-Api-Version': '2022-11-28',
-            },
+          const user = await UserModel.findOne({
+            email: email.trim().toLowerCase(),
           });
-          const emails = await res.json();
-          const emailDetail = emails.find((email) => email.verified == true);
-
-          if (!emailDetail) {
-            return done(new Error('cannot get a valid email for this user'));
-          }
-          profile.email = emailDetail.email;
-
-          let user = await UserModel.findOne({ email: profile.email });
-          if (!user) {
-            const newUser = {
-              email: profile.email,
-              firstName: profile._json.name || profile._json.login || 'noname',
-              lastName: 'nolast',
-              isAdmin: false,
-              password: 'nopass',
-            };
-            let userCreated = await UserModel.create(newUser);
-            console.log('User Registration succesful');
-            return done(null, userCreated);
-          } else {
-            console.log('User already exists');
-            return done(null, user);
-          }
-        } catch (e) {
-          console.log('Error en auth github');
-          console.log(e);
-          return done(e);
+          return done(
+            null,
+            user && user.password && isValidPassword(password, user.password)
+              ? user
+              : false,
+          );
+        } catch (err) {
+          return done(err);
         }
-      }
-    )
-  );
-
-  passport.use(
-    'login',
-    new LocalStrategy({ usernameField: 'email' }, async (username, password, done) => {
-      try {
-        const user = await UserModel.findOne({ email: username });
-        if (!user) {
-          console.log('User Not Found with username (email) ' + username);
-          return done(null, false);
-        }
-        if (!isValidPassword(password, user.password)) {
-          console.log('Invalid Password');
-          return done(null, false);
-        }
-
-        return done(null, user);
-      } catch (err) {
-        return done(err);
-      }
-    })
-  );
-
-  passport.use(
-    'register',
-    new LocalStrategy(
-      {
-        passReqToCallback: true,
-        usernameField: 'email',
       },
-      async (req, username, password, done) => {
+    ),
+  );
+  passport.use(
+    "register",
+    new local.Strategy(
+      { usernameField: "email", passReqToCallback: true },
+      async (req, email, password, done) => {
         try {
           const { firstName, lastName, age } = req.body;
-          let user = await UserModel.findOne({ email: username });
-          if (user) {
-            console.log('User already exists');
-            return done(null, false);
-          }
-
-          const userCreated = await userService.createOne({ email: username, password: createHash(password), firstName, lastName, age, rol: 'user' });
-          console.log(userCreated);
-          console.log('User Registration succesful');
-          return done(null, userCreated);
-        } catch (e) {
-          console.log('Error in register');
-          console.log(e);
-          return done(e);
+          const user = await userService.createOne({
+            email: email.trim().toLowerCase(),
+            password,
+            firstName,
+            lastName,
+            age,
+            rol: "user",
+          });
+          const cart = await cartService.createCart();
+          user.cart = String(cart._id);
+          user.last_connection = new Date();
+          await user.save();
+          return done(null, user);
+        } catch (err) {
+          return done(err);
         }
-      }
-    )
+      },
+    ),
   );
-  passport.serializeUser((user, done) => {
-    done(null, user._id);
-  });
-
+  if (env.githubClientId && env.githubClientSecret) {
+    passport.use(
+      "github",
+      new GitHubStrategy(
+        {
+          clientID: env.githubClientId,
+          clientSecret: env.githubClientSecret,
+          callbackURL: env.apiUrl + "/sessions/githubcallback",
+        },
+        async (accessToken, _, profile, done) => {
+          try {
+            const response = await fetch("https://api.github.com/user/emails", {
+              headers: {
+                Accept: "application/vnd.github+json",
+                Authorization: "Bearer " + accessToken,
+              },
+            });
+            if (!response.ok) throw new Error("OAuth email lookup failed");
+            const emails = await response.json();
+            const email = emails.find(
+              (item) => item.verified && item.primary,
+            )?.email;
+            if (!email) return done(null, false);
+            let user = await UserModel.findOne({ email });
+            if (!user) {
+              user = await userService.createOne({
+                email,
+                firstName: profile.displayName || profile.username,
+                password: randomBytes(32).toString("hex"),
+                rol: "user",
+              });
+              user.cart = String((await cartService.createCart())._id);
+              await user.save();
+            }
+            return done(null, user);
+          } catch (err) {
+            return done(err);
+          }
+        },
+      ),
+    );
+  }
+  passport.serializeUser((user, done) => done(null, String(user._id)));
   passport.deserializeUser(async (id, done) => {
-    let user = await UserModel.findById(id);
-    done(null, user);
+    try {
+      done(null, await UserModel.findById(id));
+    } catch (err) {
+      done(err);
+    }
   });
 }

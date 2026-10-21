@@ -1,0 +1,17 @@
+<section class="auth-layout"><div><p class="eyebrow">Acceso / CityCode</p><h1
+    >Recuperá<br />tu cuenta.</h1><p class="lead">El enlace de recuperación es
+      de un solo uso y vence en una hora.</p></div><form
+    method="post"
+    action="/recovery"
+    class="auth-form"
+  ><h2>Restablecer contraseña</h2>{{#if msg}}<p
+        role="status"
+      >{{msg}}</p>{{/if}}<label for="email">Correo electrónico</label><input
+      id="email"
+      type="email"
+      name="email"
+      required
+      autocomplete="email"
+    /><button class="button" type="submit">Solicitar enlace →</button><a
+      href="/login"
+    >Volver a ingresar</a></form></section>

@@ -1,0 +1,12 @@
+**
+!package.json
+!package-lock.json
+!src/
+!src/**
+!scripts/
+!scripts/promote-admin.js
+src/public/img/
+**/.env*
+**/*.log
+**/node_modules/
+**/uploads/

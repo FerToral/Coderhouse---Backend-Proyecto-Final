@@ -1,25 +1,17 @@
-// mocking.js
-const generateMockProduct = (id) => {
-    return {
-      _id: id.toString(),
-      title: `Product ${id}`,
-      description: `This is a mock product with ID ${id}`,
-      price: Math.random() * 100,
-      stock: Math.floor(Math.random() * 100),
-      thumbnails: ['https://www.paginaquenoexiste.com.ar/img/product','https://www.paginaquenoexiste.com.ar/img/product2'],
-      status: true,
-      code: 'CP12290',
-      category: 'prueba',
-    };
-  };
-  
-  const generateMockProducts = (count) => {
-    const products = [];
-    for (let i = 1; i <= count; i++) {
-      products.push(generateMockProduct(i));
-    }
-    return products;
-  };
-  
-  export { generateMockProducts };
-  
+import { randomBytes } from "node:crypto";
+export function generateMockProducts(count = 100) {
+  if (!Number.isSafeInteger(count) || count < 1 || count > 1000)
+    throw Object.assign(new Error("Invalid mock count"), { status: 400 });
+  return Array.from({ length: count }, (_, index) => ({
+    _id: randomBytes(12).toString("hex"),
+    title: "Producto " + (index + 1),
+    description: "Ejemplo de catálogo sin persistencia",
+    price: Math.round(Math.random() * 10000) / 100,
+    stock: Math.floor(Math.random() * 100),
+    thumbnails: [],
+    status: true,
+    code: "MOCK-" + randomBytes(12).toString("hex"),
+    category: "prueba",
+    owner: "admin",
+  }));
+}

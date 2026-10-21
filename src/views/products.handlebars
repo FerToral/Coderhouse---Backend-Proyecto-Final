@@ -1,53 +1,62 @@
-
-<div class="container">
-    <h1>Bievenido, {{firstName}}</h1>
-    <di>
-        <h2>Datos del usuario</h2>
-        <div class="data-profile">
-            <ul>
-                <li>Email: {{email}}</li>
-                {{#if admin}}
-                    <li>Role: admin</li>
-                {{else}}
-                    <li>Role: user</li>
-                {{/if}}
-            </ul>
-        </div>
-    </di>
-<a href='/logout'>LOGOUT</a>
-
-    <h2>Lista de Productos</h2>
-    {{#each listProducts}}
-        <ul class="list-group mb-4">
-            <li class="list-group-item">Title: {{title}}</li>
-            <li class="list-group-item">Price: {{price}}</li>
-            <li class="list-group-item">Stock: {{stock}}</li>
-            <li class="list-group-item">Thumbnail:<a href="{{thumbnail}}">Product's Image</a></li>
-            <li class="list-group-item">
-                <div class="d-flex justify-content-between">
-                    <a class="btn btn-secondary" href="/products/{{_id}}" role="button">View Details</a>
-                    <button type="button" class="btn btn-primary btn-add-product" data-title="{{title}}" value={{_id}}>Add to Cart</button>
-                </div>
-            </li>
-        </ul>
-    {{/each}}
-    
-
-</div>
-
-<div class="d-flex justify-content-center w-100">
-    <!-- Pagination links -->
-{{#if paginationProducts.hasNextPage}}
-  <a class="btn btn-outline-light" href="{{paginationProducts.nextLink}}">Next Page</a>
-{{/if}}
-{{#if paginationProducts.hasPrevPage}}
-  <a class="btn btn-outline-light" href="{{paginationProducts.prevLink}}">Previous Page</a>
-{{/if}}
-
-</div>
-
-
-
-<script src="/socket.io/socket.io.js"></script>
-<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="/js/addProductToCart.js"></script>
+<section class="catalog-heading">
+  <p class="eyebrow">Selección CityCode / Catálogo</p>
+  {{#if firstName}}<p>Hola, {{firstName}}. Este es tu catálogo.</p>{{/if}}
+  <h1>Buenos objetos.<br />Todos los días.</h1>
+  <p>Explorá los productos disponibles y armá tu próxima compra.</p>
+</section>
+<form
+  class="catalog-filters"
+  method="get"
+  action="/products"
+  aria-label="Filtrar catálogo"
+>
+  <label>Categoría
+    <input
+      name="query"
+      value="{{filters.query}}"
+      placeholder="Todas las categorías"
+    /></label>
+  <label>Ordenar por precio
+    <select name="sort"><option value="">Sin ordenar</option><option
+        value="asc"
+      >Menor a mayor</option><option value="desc">Mayor a menor</option></select></label>
+  <button type="submit" class="button secondary">Aplicar</button><a
+    href="/products"
+  >Limpiar</a>
+</form>
+<p
+  id="store-message"
+  class="status-message"
+  role="status"
+  aria-live="polite"
+></p>
+<section aria-label="Productos" class="product-list" data-cart="{{cartId}}">
+  {{#each listProducts}}
+    <article class="product-row">
+      <div class="product-mark" aria-hidden="true">{{category}}</div>
+      <div class="product-copy"><p class="eyebrow">{{category}}</p><h2><a
+            href="/products/{{_id}}"
+          >{{title}}</a></h2><p>{{description}}</p><small>{{stock}}
+          unidades disponibles</small></div>
+      <div class="product-action"><p class="price">$ {{money price}}</p>
+        {{#if canBuy}}<button class="button" data-add="{{_id}}">Agregar al
+            carrito
+            <span aria-hidden="true">↗</span></button>
+        {{else}}<a class="button secondary" href="/products/{{_id}}">Ver detalle</a>{{/if}}</div>
+    </article>
+  {{else}}<div class="empty-state"><h2>No hay productos para esta búsqueda.</h2><p
+      >Probá otra categoría o quitá los filtros.</p><a href="/products">Ver todo
+        el catálogo →</a></div>{{/each}}
+</section>
+<nav class="pagination" aria-label="Páginas de productos">
+  {{#if paginationProducts.hasPrevPage}}<a
+      href="{{paginationProducts.prevLink}}"
+    >← Anterior</a>{{/if}}
+  <span>Página
+    {{paginationProducts.page}}
+    de
+    {{paginationProducts.totalPages}}</span>
+  {{#if paginationProducts.hasNextPage}}<a
+      href="{{paginationProducts.nextLink}}"
+    >Siguiente →</a>{{/if}}
+</nav><script src="/js/store.js" defer></script>

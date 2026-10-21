@@ -1,0 +1,72 @@
+<html lang="es"><head><meta charset="utf-8" /><meta
+      name="viewport"
+      content="width=device-width,initial-scale=1"
+    />
+    <title>Productos · Primeras entregas</title><link
+      rel="stylesheet"
+      href="/recursos/styles.css"
+    /></head>
+  <body><main><header><p>Programación Backend · Comisión 43340</p><h1>De un
+          archivo a un catálogo.</h1>
+        <p>CRUD de la primera entrega. Datos locales de práctica; no es la
+          tienda final ni admite compras.</p>
+        <nav><a href="/">Listado</a>
+          ·
+          <a href="/realtimeproducts">Tiempo real</a>
+          ·
+          <a href="/api/products">API JSON</a></nav></header>
+      <section><h2>Productos</h2><p role="status" id="status">{{#if
+            realtime
+          }}Escuchando cambios del catálogo.{{else}}Listado actual.{{/if}}</p>
+        <div class="scroll"><table><thead><tr><th>ID</th><th>Producto</th><th
+                >Código</th><th>Precio</th><th>Stock</th></tr></thead>
+            <tbody id="products">{{#each products}}<tr><td>{{id}}</td><td
+                  >{{title}}</td><td>{{code}}</td><td>{{price}}</td><td
+                  >{{stock}}</td></tr>{{/each}}</tbody></table></div>
+        {{#unless products}}<p id="empty">Todavía no hay productos. Agregá el
+            primero desde el formulario.</p>{{/unless}}</section>
+      <section><h2>Alta de producto</h2><form id="create">
+          <label>Nombre<input
+              name="title"
+              required
+              maxlength="100"
+            /></label><label>Descripción<input
+              name="description"
+              required
+              maxlength="100"
+            /></label>
+          <label>Código<input
+              name="code"
+              required
+              maxlength="100"
+            /></label><label>Categoría<input
+              name="category"
+              required
+              maxlength="100"
+            /></label>
+          <label>Precio<input
+              type="number"
+              name="price"
+              required
+              min="0"
+              step="0.01"
+            /></label>
+          <label>Stock<input
+              type="number"
+              name="stock"
+              required
+              min="0"
+              step="1"
+            /></label><button>Agregar</button></form></section>
+      <section><h2>Baja de producto</h2><form id="remove"><label>ID<input
+              name="id"
+              type="number"
+              min="1"
+              step="1"
+              required
+            /></label><button>Eliminar</button></form></section>
+    </main>{{#if realtime}}<script
+        src="/socket.io/socket.io.js"
+      ></script>{{/if}}<script
+      src="/recursos/products.js"
+    ></script></body></html>
